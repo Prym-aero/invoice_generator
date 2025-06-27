@@ -27,7 +27,7 @@ const UploadSection = ({ onSuccess }) => {
       formData.append("file", file);
 
       const response = await axios.post(
-        "http://localhost:5000/api/upload",
+        "https://invoice-generator-s4ap.onrender.com/api/upload",
         formData,
         {
           headers: {

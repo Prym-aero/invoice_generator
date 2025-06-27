@@ -160,7 +160,7 @@ const BudgetSection = ({ fileId, totals, onGenerate }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/generate-invoice",
+        "https://invoice-generator-s4ap.onrender.com/api/generate-invoice",
         {
           fileId,
           divisions,

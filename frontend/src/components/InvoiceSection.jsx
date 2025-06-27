@@ -30,7 +30,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
 
   const handleDownload = () => {
     if (fileId) {
-      window.location.href = `http://localhost:5000/api/download/${fileId}`;
+      window.location.href = `https://invoice-generator-s4ap.onrender.com/api/download/${fileId}`;
     }
   };
 

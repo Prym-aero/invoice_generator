@@ -1,9 +1,9 @@
+require('dotenv').config();
 require('events').EventEmitter.defaultMaxListeners = 20;
 const express = require('express');
 const db = require('./config/db');
 const app = express();
 const cors = require('cors');
-require('dotenv').config();
 
 app.use(cors({
     origin: ['https://invoice-generator-lyart.vercel.app', 'http://localhost:5174']

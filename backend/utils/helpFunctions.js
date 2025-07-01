@@ -34,11 +34,12 @@ function distributeAcres(numFarmers, totalAcres) {
 }
 
 // this fuction is used to convert excel file to json
-const excelToJson = async (fileBuffer, region = "Marathwada", district = "Aurangabad") => {
+const excelToJson = async (fileBuffer, region = "", district = "") => {
   const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
   const sheetName = workbook.SheetNames[0];
   const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
   console.log("jsonData:", jsonData.slice(0, 5)); // Log first 5 rows for debugging
+  console.log("cropType:", jsonData[0]?.cropType || "No Crop");
 
   let filteredData = [];
 
@@ -54,6 +55,8 @@ const excelToJson = async (fileBuffer, region = "Marathwada", district = "Aurang
   } else {
     filteredData = jsonData;
   }
+
+  console.log("Filtered Data:", filteredData.slice(0, 5)); // Log first 5 rows of filtered data for debugging
 
   return filteredData;
 };

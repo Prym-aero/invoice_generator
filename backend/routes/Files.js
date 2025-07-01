@@ -84,4 +84,20 @@ router.get('/download/:id', async (req, res) => {
 });
 
 
+router.delete('/deleteAll', async (req, res) => {
+  try {
+
+    const result = await File.deleteMany({});
+    if (result.deletedCount > 0) {
+      res.status(200).json({ message: 'All files deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'No files found to delete' });
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete all files' });
+  }
+})
+
 module.exports = router;

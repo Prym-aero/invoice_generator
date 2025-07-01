@@ -3,6 +3,7 @@ const router = express.Router();
 
 const divideBudget = require('../utils/helpFunctions');
 
+
 router.post('/budget', async (req, res) => {
   const { totalBudget } = req.body;
   if (!totalBudget || totalBudget <= 5) {
@@ -12,5 +13,8 @@ router.post('/budget', async (req, res) => {
   const parts = divideBudget(totalBudget);
   res.json({ divisions: parts });
 });
+
+
+
 
 module.exports = router;

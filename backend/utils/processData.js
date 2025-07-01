@@ -78,6 +78,8 @@ const divideBySet = (processedData) => {
         }
     });
 
+    console.log('sets:', sets);
+
     return sets;
 }
 

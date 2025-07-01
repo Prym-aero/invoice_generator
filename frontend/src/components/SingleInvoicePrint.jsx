@@ -25,6 +25,10 @@ const SingleInvoicePrint = ({ fileId }) => {
         "http://localhost:5000/api/get-single-invoice",
         { fileId, division, serialNo }
       );
+      // const response = await axios.post(
+      //   "https://invoice-generator-s4ap.onrender.com/api/get-single-invoice",
+      //   { fileId, division, serialNo }
+      // );
 
       if (response.data.success) {
         setInvoice(response.data.invoice);

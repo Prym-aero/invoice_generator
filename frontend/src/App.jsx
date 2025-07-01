@@ -9,6 +9,8 @@ const App = () => {
   const [fileId, setFileId] = useState(null);
   const [processedData, setProcessedData] = useState(null);
   const [totals, setTotals] = useState({ farmers: 0, acres: 0 });
+  const [fileterdData, setFilteredData] = useState(null);
+  const [setsData, setSetsData] = useState(null);
 
   const handleGenerate = useCallback((data) => {
     setProcessedData(data);
@@ -81,10 +83,12 @@ const App = () => {
         >
           {activeTab === "upload" && (
             <UploadSection
-              onSuccess={(id, totals) => {
+              onSuccess={(id, totals, filteredData, sets) => {
                 setFileId(id);
                 setTotals(totals);
-                setActiveTab("budget");
+                setFilteredData(filteredData);
+                setSetsData(sets);
+                // setActiveTab("budget");
               }}
             />
           )}
@@ -92,6 +96,8 @@ const App = () => {
             <BudgetSection
               fileId={fileId}
               totals={totals}
+              fileterdData={fileterdData}
+              setsData={setsData}
               onGenerate={handleGenerate}
             />
           )}

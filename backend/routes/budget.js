@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const divideBudget = require('../utils/divideBudget');
+const divideBudget = require('../utils/helpFunctions');
 
 router.post('/budget', async (req, res) => {
   const { totalBudget } = req.body;

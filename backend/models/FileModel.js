@@ -14,6 +14,12 @@ const FileSchema = new mongoose.Schema({
     stats: Object,
     metadata: Object
   },
+  filteredData: {
+     filteredData: Array // Stores filtered data from the original file
+  },
+  sets: {
+    sets: Array // Stores sets of data divided by region or other criteria
+  },
   totals: {
     farmers: Number,
     acres: Number

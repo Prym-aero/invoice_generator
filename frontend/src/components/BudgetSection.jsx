@@ -7,7 +7,13 @@ function generateRandomSerial() {
   return letters + numbers;
 }
 
-const BudgetSection = ({ fileId, totals, onGenerate }) => {
+const BudgetSection = ({
+  fileId,
+  totals,
+  filteredData,
+  setsData,
+  onGenerate,
+}) => {
   // Initialize state from localStorage if available
   const [budget, setBudget] = useState(() => {
     const saved = localStorage.getItem("budgetData");
@@ -160,7 +166,7 @@ const BudgetSection = ({ fileId, totals, onGenerate }) => {
 
     try {
       const response = await axios.post(
-        "https://invoice-generator-s4ap.onrender.com/api/generate-invoice",
+        "http://localhost:5000/api/generate-invoice",
         {
           fileId,
           divisions,
@@ -170,6 +176,17 @@ const BudgetSection = ({ fileId, totals, onGenerate }) => {
           acresDivision,
         }
       );
+      // const response = await axios.post(
+      //   "https://invoice-generator-s4ap.onrender.com/api/generate-invoice",
+      //   {
+      //     fileId,
+      //     divisions,
+      //     discountAmount: parseFloat(discountAmount),
+      //     recipientsCount: parseInt(recipientsCount),
+      //     preferredSerialNo: preferredSerialNo || null,
+      //     acresDivision,
+      //   }
+      // );
 
       if (response.data.success) {
         onGenerate(response.data.invoices);

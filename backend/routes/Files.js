@@ -5,6 +5,9 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const File = require('../models/FileModel');
 
+const { excelToJson } = require('../utils/helpFunctions');
+const { divideBySet } = require('../utils/processData');
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/upload', upload.single('file'), async (req, res) => {
@@ -21,6 +24,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         let totalAcres = 0;
         farmers.forEach(f => totalAcres += parseFloat(f.acres || 0));
 
+
+
         const fileDoc = new File({
           originalFile: {
             data: req.file.buffer,
@@ -32,8 +37,23 @@ router.post('/upload', upload.single('file'), async (req, res) => {
           }
         });
 
+        const filteredData = await excelToJson(req.file.buffer, req.body.region, req.body.district);
+
+
+        const sets = divideBySet(filteredData);
+
+
+        fileDoc.filteredData = {
+          filteredData: filteredData,
+        }
+
+        fileDoc.sets = {
+          sets: sets,
+        }
+
+
         await fileDoc.save();
-        res.status(200).json({ id: fileDoc._id, totalFarmers: farmers.length, totalAcres });
+        res.status(200).json({ id: fileDoc._id, totalFarmers: farmers.length, totalAcres, filteredData: filteredData, sets: sets, message: 'File uploaded successfully' });
       });
   } catch (err) {
     console.error(err);

@@ -165,7 +165,7 @@ async function generateExcelWithExcelJS(processedData) {
       farmer.crop || '',
       farmer.fertilizer_use || '',
       farmer.assignedPilot || "unassigned",
-      farmer.scheduleData || "unscheduled",
+      farmer.scheduledDate || "unscheduled",
     ]);
 
     // Apply styles to each cell

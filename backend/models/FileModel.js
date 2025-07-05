@@ -1,30 +1,32 @@
-const mongoose = require('mongoose');
+// models/FileModel.js
+const mongoose = require("mongoose");
 
 const FileSchema = new mongoose.Schema({
-  originalFile: {
-    data: Buffer,      // Stores original file binary
-    contentType: String // MIME type (e.g., 'text/csv')
-  },
-  processedFile: {
-    data: Buffer,      // Stores processed CSV binary
-    contentType: String
-  },
-  processedData: {
-    invoices: Array,
-    stats: Object,
-    metadata: Object
-  },
-  filteredData: {
-     filteredData: Array // Stores filtered data from the original file
-  },
-  sets: {
-    sets: Array // Stores sets of data divided by region or other criteria
+  // Metadata only — not raw data
+  farmerFileName: String,
+  pilotFileName: String,
+  processedFileName: String, // Optional: if you're storing exported Excel
+  filePaths: {
+    farmer: Buffer, // e.g. path to uploaded file or GridFS reference
+    pilot: Buffer,
+    processedFile: {
+      data: Buffer,
+      contentType: String,
+    },
   },
   totals: {
     farmers: Number,
-    acres: Number
+    acres: Number,
+    pilots: Number
   },
-  createdAt: { type: Date, default: Date.now }
+  dispatchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "DispatchRecord"
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-module.exports = mongoose.model('File', FileSchema);
+module.exports = mongoose.model("File", FileSchema);

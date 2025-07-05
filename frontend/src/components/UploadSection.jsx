@@ -1,45 +1,51 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import StateSelector from "./StateSelector";
 const API_URL = import.meta.env.VITE_API_ENDPOINT;
 
+const UPLOAD_STORAGE_KEY = "uploadData";
+
 const UploadSection = ({ onSuccess }) => {
-  const [file, setFile] = useState(null);
-  const [total, setTotal] = useState(null);
+  const [farmerFile, setFarmerFile] = useState(null);
+  const [pilotFile, setPilotFile] = useState(null);
+  const [stateValue, setStateValue] = useState(() => {
+    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+    return saved ? JSON.parse(saved).stateValue : null;
+  });
+
+  const [farmersData, setFarmersData] = useState(null);
+
+  const [filteredData, setFilteredData] = useState(() => {
+    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+    return saved ? JSON.parse(saved).filteredData : [];
+  });
+
+  const [sets, setSets] = useState(() => {
+    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+    return saved ? JSON.parse(saved).sets : {};
+  });
+
+  const [total, setTotal] = useState(() => {
+    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+    return saved ? JSON.parse(saved).total : null;
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [filteredData, setFilteredData] = useState([]);
-  const [sets, setSets] = useState({});
 
-  // State for dropdowns
-  const [stateValue, setStateValue] = useState("Maharashtra");
-  const [regionValue, setRegionValue] = useState("");
-  const [districtValue, setDistrictValue] = useState("");
-
-  // Dropdown options
-  const regions = [
-    "Konkan",
-    "Western Maharashtra",
-    "Marathwada",
-    "North Maharashtra",
-    "Vidarbha",
-  ];
-
-  const districts = {
-    Konkan: ["Ratnagiri", "Sindhudurg", "Raigad", "Thane"],
-    "Western Maharashtra": ["Pune", "Satara", "Sangli", "Kolhapur"],
-    Marathwada: ["Aurangabad", "Beed", "Jalna", "Latur"],
-    "North Maharashtra": ["Nashik", "Dhule", "Nandurbar", "Jalgaon"],
-    Vidarbha: ["Nagpur", "Amravati", "Wardha", "Chandrapur"],
+  const handleFarmerFileChange = (e) => {
+    setFarmerFile(e.target.files[0]);
+    setError("");
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const handlePilotFileChange = (e) => {
+    setPilotFile(e.target.files[0]);
     setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
+    if (!farmerFile && !pilotFile) {
       setError("Please select a file");
       return;
     }
@@ -49,41 +55,43 @@ const UploadSection = ({ onSuccess }) => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("farmersFile", farmerFile);
+      formData.append("pilotsFile", pilotFile);
       formData.append("state", stateValue);
-      formData.append("region", regionValue);
-      formData.append("district", districtValue);
 
-      const response = await axios.post(
-        `${API_URL}/upload`, // change to your backend URL
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      console.log("upload response:", response.data.message);
-      
-
-      setFilteredData(response.data.filteredData || []);
-      setSets(response.data.sets || {});
-
-      onSuccess(
-        response.data.id,
-        {
-          farmers: response.data.totalFarmers,
-          acres: response.data.totalAcres,
+      const response = await axios.post(`${API_URL}/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-        response.data.filteredData,
-        response.data.sets
+      });
+
+      const { farmersData, sets, totalFarmers, totalAcres, totalPilots, id } =
+        response.data;
+
+      console.log(farmersData.splice(0, 5));
+      setFilteredData(farmersData);
+      setSets(sets || {});
+
+      const totalInfo = {
+        farmers: totalFarmers,
+        acres: totalAcres,
+        pilots: totalPilots,
+      };
+      setTotal(totalInfo);
+      console.log(totalInfo);
+
+      // Store in localStorage
+      localStorage.setItem(
+        UPLOAD_STORAGE_KEY,
+        JSON.stringify({
+          stateValue,
+          filteredData,
+          sets,
+          total: totalInfo,
+        })
       );
 
-      setTotal({
-        farmers: response.data.totalFarmers,
-        acres: response.data.totalAcres,
-      });
+      onSuccess(id, totalInfo, farmersData, sets);
     } catch (err) {
       setError(err.response?.data?.message || "Upload failed");
     } finally {
@@ -91,9 +99,10 @@ const UploadSection = ({ onSuccess }) => {
     }
   };
 
+  // Clear localStorage on refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
-      localStorage.removeItem("budgetData");
+      localStorage.removeItem(UPLOAD_STORAGE_KEY);
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
@@ -101,51 +110,65 @@ const UploadSection = ({ onSuccess }) => {
     };
   }, []);
 
+  // Save to localStorage whenever stateValue changes
+  useEffect(() => {
+    localStorage.setItem(
+      UPLOAD_STORAGE_KEY,
+      JSON.stringify({ stateValue, filteredData, sets, total })
+    );
+  }, [stateValue, filteredData, sets, total]);
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">
         Upload Farmer Data
       </h2>
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
           {/* Select file */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Excel/CSV File
-            </label>
-            <input
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500
+          <div className="uploadInputs flex gap-2. justify-evenly">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Farmer CSV/XLS/Excel File
+              </label>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFarmerFileChange}
+                className="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-md file:border-0
                 file:text-sm file:font-semibold
                 file:bg-blue-50 file:text-blue-700
                 hover:file:bg-blue-100"
-              disabled={isLoading}
-            />
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Pilot CSV/XLS/Excel File
+              </label>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handlePilotFileChange}
+                className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           {/* Select state */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select State
-            </label>
-            <select
-              value={stateValue}
-              onChange={(e) => setStateValue(e.target.value)}
-              className="w-full border border-gray-300 rounded-md p-2"
-              disabled={isLoading}
-            >
-              <option value="Maharashtra">Maharashtra</option>
-              {/* You can add more states here */}
-            </select>
-          </div>
+          <StateSelector onStateValue={setStateValue} stateValue={stateValue} />
 
           {/* Select region */}
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Region
             </label>
@@ -165,10 +188,10 @@ const UploadSection = ({ onSuccess }) => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Select district (depends on region) */}
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select District
             </label>
@@ -186,14 +209,14 @@ const UploadSection = ({ onSuccess }) => {
                   </option>
                 ))}
             </select>
-          </div>
+          </div> */}
 
           {error && <div className="text-red-600 text-sm py-2">{error}</div>}
 
           {/* Submit button */}
           <button
             type="submit"
-            disabled={!file || isLoading}
+            disabled={!farmerFile || !pilotFile || isLoading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
@@ -226,7 +249,7 @@ const UploadSection = ({ onSuccess }) => {
           </button>
         </div>
       </form>
-      {filteredData.length > 0 && (
+      {filteredData.length >= 0 && (
         <div className="mt-6 space-y-4">
           {/* Location Summary Box */}
           <div className="bg-gray-100 border border-gray-300 rounded-xl p-4 shadow-sm">
@@ -240,19 +263,6 @@ const UploadSection = ({ onSuccess }) => {
               </p>
             )}
 
-            {filteredData[0]?.region && (
-              <p>
-                <strong>Region:</strong> {filteredData[0].region}
-              </p>
-            )}
-
-            {filteredData.some((f) => f.district) && (
-              <p>
-                <strong>District(s):</strong>{" "}
-                {[...new Set(filteredData.map((f) => f.district))].join(", ")}
-              </p>
-            )}
-
             <p>
               <strong>Total Farmers:</strong> {filteredData.length}
             </p>
@@ -262,36 +272,6 @@ const UploadSection = ({ onSuccess }) => {
                 .reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0)
                 .toFixed(2)}
             </p>
-          </div>
-
-          {/* Set Summary Box */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="bg-green-100 border-l-4 border-green-600 p-4 rounded shadow-sm">
-              <p className="text-green-800 font-semibold">✅ Full Data</p>
-              <p>{sets.fullData?.length || 0} farmers</p>
-            </div>
-
-            <div className="bg-yellow-100 border-l-4 border-yellow-600 p-4 rounded shadow-sm">
-              <p className="text-yellow-800 font-semibold">🚫 No Crop Data</p>
-              <p>{sets.noCropData?.length || 0} farmers</p>
-            </div>
-
-            <div className="bg-blue-100 border-l-4 border-blue-600 p-4 rounded shadow-sm">
-              <p className="text-blue-800 font-semibold">
-                🪙 Half Acres (&lt; 0.1)
-              </p>
-              <p>{sets.halfData?.length || 0} farmers</p>
-            </div>
-
-            <div className="bg-pink-100 border-l-4 border-pink-600 p-4 rounded shadow-sm">
-              <p className="text-pink-800 font-semibold">❓ Incomplete State</p>
-              <p>{sets.incompleteData?.length || 0} farmers</p>
-            </div>
-
-            <div className="bg-red-100 border-l-4 border-red-600 p-4 rounded shadow-sm">
-              <p className="text-red-800 font-semibold">❌ Unknown Address</p>
-              <p>{sets.unknownData?.length || 0} farmers</p>
-            </div>
           </div>
         </div>
       )}

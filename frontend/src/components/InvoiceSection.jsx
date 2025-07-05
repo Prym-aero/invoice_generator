@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import FarmerInvoice from "./FarmerInvoice";
-import ReactDOM from "react-dom"; // Added for printing
-import { createRoot } from "react-dom/client";
+const API_URL = import.meta.env.VITE_API_ENDPOINT;
 
 const InvoiceSection = ({ invoices = [], fileId = "" }) => {
   const [selectedRegion, setSelectedRegion] = useState("all");
@@ -30,7 +28,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
 
   const handleDownload = () => {
     if (fileId) {
-      window.location.href = `http://localhost:5000/api/download/${fileId}`;
+      window.location.href = `${API_URL}/download/${fileId}`;
       // window.location.href = `https://invoice-generator-s4ap.onrender.com/api/download/${fileId}`;
     }
   };
@@ -320,7 +318,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
       </h2>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 no-print">
-        <div className="w-full sm:w-auto">
+        {/* <div className="w-full sm:w-auto">
           <label htmlFor="region" className="sr-only">
             Region
           </label>
@@ -337,7 +335,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
 
         <div className="flex gap-2 w-full sm:w-auto">
           <button
@@ -381,7 +379,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                 Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Farmer Mobile
+                Mobile
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 State
@@ -390,76 +388,74 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                 District
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                city
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Region
+                Taluka
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acres
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount (₹)
+                Crop
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Discount
+                Pesticide
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoice No.
+                Pincode
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Assigned Pilot
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Scheduled Date
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredInvoices.length > 0 ? (
-              filteredInvoices.map((invoice) => (
-                <tr key={invoice.invoiceNo || invoice.serialNo}>
+              filteredInvoices.map((invoice, index) => (
+                <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice.serialNo}
+                    {invoice.serialNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice.farmerName}
+                    {invoice.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice.farmerMobile}
+                    {invoice.mobile}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.state}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.district}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice.city}
+                    {invoice.taluka}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {invoice.region}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.acres}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{invoice.finalAmount}
+                    {invoice.crop}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        invoice.discount === "No"
-                          ? ""
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {invoice.discount === "No" ? "-" : invoice.discount}
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice?.pesticide_use === true ? "True" : "False"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                    {invoice.invoiceNo}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.pincode}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.assignedPilot}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.scheduledDate}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan="8"
+                  colSpan="9"
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
                   {safeInvoices.length === 0
@@ -510,15 +506,15 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
 InvoiceSection.propTypes = {
   invoices: PropTypes.arrayOf(
     PropTypes.shape({
-      serialNo: PropTypes.number,
-      name: PropTypes.string,
-      region: PropTypes.string,
-      regionId: PropTypes.number,
+      serialNumber: PropTypes.string,
+      farmerName: PropTypes.string,
+      farmerMobile: PropTypes.string,
+      state: PropTypes.string,
       district: PropTypes.string,
-      acres: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      discount: PropTypes.string,
-      finalAmount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      invoiceNo: PropTypes.string,
+      taluka: PropTypes.string,
+      pincode: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      assignedPilot: PropTypes.string,
+      scheduledDate: PropTypes.string,
     })
   ),
   fileId: PropTypes.string,

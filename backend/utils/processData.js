@@ -64,21 +64,23 @@ const divideBySet = (processedData) => {
         fullData: []
     }
 
-    processedData.forEach((data) => {
-        if (data.address === "unknown") {
-            sets.unknownData.push(data);
-        } else if (data.acres < 0.1) {
-            sets.halfData.push(data);
-        } else if (data.cropType === "No Crop") {
-            sets.noCropData.push(data);
-        } else if (data.state === '') {
-            sets.incompleteData.push(data);
-        } else {
-            sets.fullData.push(data);
-        }
-    });
+    if (processedData.length > 0) {
+        processedData.forEach((data) => {
+            if (data.address === "unknown") {
+                sets.unknownData.push(data);
+            } else if (data.acres < 0.1) {
+                sets.halfData.push(data);
+            } else if (data.cropType === "No Crop") {
+                sets.noCropData.push(data);
+            } else if (data.state === '') {
+                sets.incompleteData.push(data);
+            } else {
+                sets.fullData.push(data);
+            }
+        });
+    }
 
-    console.log('sets:', sets);
+   
 
     return sets;
 }

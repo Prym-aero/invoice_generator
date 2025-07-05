@@ -33,11 +33,9 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-blue-600">
-          Bill Generator
-        </h1>
+        <h1 className="text-3xl font-bold text-blue-600">Farmer Analytics</h1>
         <p className="text-gray-600">
-          Generate invoices with automated budget distribution
+          Generate Analytics with automated budget distribution
         </p>
       </header>
 
@@ -61,7 +59,7 @@ const App = () => {
             onClick={() => setActiveTab("invoices")}
             disabled={!processedData}
           >
-            Generate Invoices
+            Generated Analytics
           </TabButton>
           <TabButton
             active={activeTab === "single-invoice"}
@@ -83,10 +81,10 @@ const App = () => {
         >
           {activeTab === "upload" && (
             <UploadSection
-              onSuccess={(id, totals, filteredData, sets) => {
+              onSuccess={(id, totals, farmersData, sets) => {
                 setFileId(id);
                 setTotals(totals);
-                setFilteredData(filteredData);
+                setFilteredData(farmersData);
                 setSetsData(sets);
                 // setActiveTab("budget");
               }}

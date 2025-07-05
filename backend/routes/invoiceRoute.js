@@ -7,7 +7,7 @@ const router = express.Router();
 const xlsx = require('xlsx');
 const ExcelJS = require('exceljs');
 const File = require('../models/FileModel');
-const { parseSerialNumber, distributeAcres, excelToJson, generateExcelWithExcelJS } = require('../utils/helpFunctions');
+const { parseSerialNumber, distributeAcres, excelToJsonFarmer, generateExcelWithExcelJS } = require('../utils/helpFunctions');
 const { getProcessedData, divideBySet } = require('../utils/processData');
 const { v4: uuidv4 } = require('uuid');
 
@@ -43,7 +43,7 @@ router.post('/generate-invoice', async (req, res) => {
         if (!fileDoc) return res.status(404).json({ error: 'File not found' });
 
 
-        let farmerData = await excelToJson(fileDoc.originalFile.data); // 
+        let farmerData = await excelToJsonFarmer(fileDoc.farmersFile.data); // 
 
         farmerData = farmerData.map(farmer => {
             if (!farmer.district) throw new Error("Missing district");
@@ -117,7 +117,7 @@ router.post('/generate-invoice', async (req, res) => {
             data: excelBuffer,
             contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         };
-        fileDoc.processedData = {
+        fileDoc.processedFarmerData = {
             invoices: processedData,
             stats: {
                 totalFarmers: processedData.length,

@@ -4,7 +4,6 @@ function generateDispatchData({
     totalBudget,
     rate,
     district,
-    numberOfFarmers,
     crops,
     landSizePercentages,
     productUsePercentages,
@@ -13,41 +12,79 @@ function generateDispatchData({
 }) {
     const totalAcres = totalBudget / rate;
 
-    // 1. Filter farmers by district
+    const normalize = (str) => str?.trim().toLowerCase();
     let eligibleFarmers = farmers.filter(
-        (f) => f.district?.toLowerCase() === district.toLowerCase()
+        (f) => normalize(f.district) === normalize(district)
     );
 
-    // 2. Filter by land size category
+    if (eligibleFarmers.length === 0) {
+        console.warn(`No farmers found for district: ${district}`);
+    }
+
     const landTypes = {
         small: eligibleFarmers.filter(f => f.acres >= 0 && f.acres <= 2),
         medium: eligibleFarmers.filter(f => f.acres >= 3 && f.acres <= 10),
         large: eligibleFarmers.filter(f => f.acres > 10),
     };
 
-    const total = numberOfFarmers;
-    const selected = [
-        ...pickRandom(landTypes.small, (total * landSizePercentages.small) / 100),
-        ...pickRandom(landTypes.medium, (total * landSizePercentages.medium) / 100),
-        ...pickRandom(landTypes.large, (total * landSizePercentages.large) / 100),
-    ];
+    const selectedFarmers = [];
+    let totalSelectedAcres = 0;
 
-    // 3. Assign crop by %
-    assignCrops(selected, crops);
+    const targetCounts = {
+        small: Math.round((eligibleFarmers.length * landSizePercentages.small) / 100),
+        medium: Math.round((eligibleFarmers.length * landSizePercentages.medium) / 100),
+        large: Math.round((eligibleFarmers.length * landSizePercentages.large) / 100),
+    };
 
-    // 4. Assign products by %
-    assignProductUsage(selected, productUsePercentages);
+    for (const [category, count] of Object.entries(targetCounts)) {
+        const candidates = [...landTypes[category]].sort(() => 0.5 - Math.random());
 
-    // 5. Assign pilot by taluka
-    assignPilots(selected, pilots);
+        for (const farmer of candidates) {
+            const farmerTotalCost = farmer.acres * rate;
+            if (
+                totalSelectedAcres + farmer.acres <= totalAcres &&
+                getTotalCost(selectedFarmers) + farmerTotalCost <= totalBudget
+            ) {
+                selectedFarmers.push({
+                    ...farmer,
+                    perRate: rate,
+                    totalCost: farmerTotalCost,
+                });
+                totalSelectedAcres += farmer.acres;
+            }
+        }
+    }
 
-    // 6. Assign spraying date range
-    assignDates(selected, dateRange);
+    const remainingCandidates = eligibleFarmers.filter(
+        (f) => !selectedFarmers.find(sf => sf.mobile === f.mobile)
+    ).sort(() => 0.5 - Math.random());
 
-    // 7. Assign Serial number
-    assignSerialNumbers(selected, startSerial);
+    for (const farmer of remainingCandidates) {
+        const farmerTotalCost = farmer.acres * rate;
+        if (
+            totalSelectedAcres + farmer.acres <= totalAcres &&
+            getTotalCost(selectedFarmers) + farmerTotalCost <= totalBudget
+        ) {
+            selectedFarmers.push({
+                ...farmer,
+                perRate: rate,
+                totalCost: farmerTotalCost,
+            });
+            totalSelectedAcres += farmer.acres;
+        }
+    }
 
-    return selected;
+    assignCrops(selectedFarmers, crops);
+    assignProductUsage(selectedFarmers, productUsePercentages); // keep logic, don’t show extra fields
+    assignPilots(selectedFarmers, pilots);
+    assignDates(selectedFarmers, dateRange);
+    assignSerialNumbers(selectedFarmers, startSerial);
+
+    return selectedFarmers;
+}
+
+function getTotalCost(farmers) {
+    return farmers.reduce((sum, f) => sum + (f.totalCost || 0), 0);
 }
 
 function pickRandom(array, count) {
@@ -83,11 +120,32 @@ function assignSerialNumbers(farmers, startSerial) {
 
 
 function assignProductUsage(farmers, productPercentages) {
+    const productKeys = Object.keys(productPercentages);
+    const totalFarmers = farmers.length;
+    const assignedFarmers = new Set();
+
     Object.entries(productPercentages).forEach(([product, percentage]) => {
-        const count = Math.round((percentage / 100) * farmers.length);
-        pickRandom(farmers, count).forEach((f) => (f[`${product}_use`] = true));
+        const count = Math.round((percentage / 100) * totalFarmers);
+        const selectedFarmers = pickRandom(farmers.filter(f => !assignedFarmers.has(f)), count);
+
+        selectedFarmers.forEach(f => {
+            if (!Array.isArray(f.used_medicine)) f.used_medicine = [];
+            f.used_medicine.push(product);
+            assignedFarmers.add(f);
+        });
+    });
+
+    // Fill missing
+    farmers.forEach(farmer => {
+        if (!Array.isArray(farmer.used_medicine) || farmer.used_medicine.length === 0) {
+            const randomProduct = productKeys[Math.floor(Math.random() * productKeys.length)];
+            farmer.used_medicine = [randomProduct];
+        }
     });
 }
+
+
+
 
 function normalize(str) {
     return str?.toLowerCase().replace(/\s+/g, "").trim();

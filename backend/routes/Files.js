@@ -62,6 +62,7 @@ router.post(
         success: true,
         id: fileDoc._id,
         farmersData: farmers,
+        pilotsData: pilots,
         totalFarmers,
         totalAcres,
         totalPilots,

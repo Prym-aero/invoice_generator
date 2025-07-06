@@ -9,15 +9,30 @@ const App = () => {
   const [fileId, setFileId] = useState(null);
   const [processedData, setProcessedData] = useState(null);
   const [totals, setTotals] = useState({ farmers: 0, acres: 0 });
-  const [fileterdData, setFilteredData] = useState(null);
+  const [filteredData, setFilteredData] = useState(null);
+  const [pilotsData, setPilotsData] = useState(null);
   const [setsData, setSetsData] = useState(null);
+  const [completedSteps, setCompletedSteps] = useState({
+    upload: false,
+    budget: false,
+    invoices: false,
+  });
 
   const handleGenerate = useCallback((data) => {
     setProcessedData(data);
     setActiveTab("invoices");
+    setCompletedSteps((prev) => ({ ...prev, budget: true }));
   }, []);
 
-  // ✅ Add warning on refresh or navigation
+  const handleTabChange = (tab) => {
+    // Only prevent going back to upload tab if it's completed
+    if (tab === "upload" && completedSteps.upload) {
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  // Add warning on refresh or navigation
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (fileId || processedData) {
@@ -43,30 +58,24 @@ const App = () => {
         <div className="flex space-x-1 bg-white p-1 rounded-lg shadow">
           <TabButton
             active={activeTab === "upload"}
-            onClick={() => setActiveTab("upload")}
+            onClick={() => handleTabChange("upload")}
+            disabled={completedSteps.upload}
           >
             Upload Data
           </TabButton>
           <TabButton
             active={activeTab === "budget"}
-            onClick={() => setActiveTab("budget")}
+            onClick={() => handleTabChange("budget")}
             disabled={!fileId}
           >
             Budget Division
           </TabButton>
           <TabButton
             active={activeTab === "invoices"}
-            onClick={() => setActiveTab("invoices")}
+            onClick={() => handleTabChange("invoices")}
             disabled={!processedData}
           >
             Generated Analytics
-          </TabButton>
-          <TabButton
-            active={activeTab === "single-invoice"}
-            onClick={() => setActiveTab("single-invoice")}
-            disabled={!processedData}
-          >
-            Print Single Invoice
           </TabButton>
         </div>
       </nav>
@@ -81,12 +90,14 @@ const App = () => {
         >
           {activeTab === "upload" && (
             <UploadSection
-              onSuccess={(id, totals, farmersData, sets) => {
+              onSuccess={(id, totals, farmersData, pilotsData, sets) => {
                 setFileId(id);
                 setTotals(totals);
                 setFilteredData(farmersData);
+                setPilotsData(pilotsData);
                 setSetsData(sets);
-                // setActiveTab("budget");
+                setCompletedSteps((prev) => ({ ...prev, upload: true }));
+                setActiveTab("budget");
               }}
             />
           )}
@@ -94,7 +105,8 @@ const App = () => {
             <BudgetSection
               fileId={fileId}
               totals={totals}
-              fileterdData={fileterdData}
+              farmersData={filteredData}
+              pilotsData={pilotsData}
               setsData={setsData}
               onGenerate={handleGenerate}
             />

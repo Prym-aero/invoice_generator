@@ -45,11 +45,13 @@ const excelToJsonFarmer = async (fileBuffer) => {
       mobile: farmer.mobile_number,
       acres: farmer.landholding_acres, // ← you missed `farmer.` here
       state: farmer.state,
-      district: farmer.district,
+      district: farmer.district.trim(),
       taluka: farmer.taluka_or_city,
       pincode: farmer.pincode
     };
   });
+
+  console.log(properData);
 
   return properData;
 }
@@ -71,7 +73,7 @@ const excelToJsonPilots = async (fileBuffer) => {
         .filter(Boolean)
   }));
 
-  console.log(pilots.splice(0, 10));
+
 
 
 
@@ -139,9 +141,12 @@ async function generateExcelWithExcelJS(processedData) {
     { header: 'Pincode', key: 'pincode', width: 18 },
     { header: 'Acres', key: 'acres', width: 10 },
     { header: 'Crop', key: 'crop', width: 10 },
-    { header: 'fertilizer_use', key: 'fertilizer_use', width: 12 },
+    { header: 'usedb medicine', key: 'used_medicine', width: 12 },
     { header: 'Pilot', key: 'assignedPilot', width: 18 },
     { header: 'Date', key: 'scheduledDate', width: 18 },
+    { header: 'Rate', key: 'perRate', width: 13 },
+    { header: 'Total Cost', key: 'totalCost', width: 14 },
+
   ];
 
   // Add column headers
@@ -163,9 +168,11 @@ async function generateExcelWithExcelJS(processedData) {
       farmer.pincode || '',
       farmer.acres || 0,
       farmer.crop || '',
-      farmer.fertilizer_use || '',
-      farmer.assignedPilot || "unassigned",
-      farmer.scheduledDate || "unscheduled",
+      farmer.used_medicine.join(", ") || [],
+      farmer.assignedPilot || "Unassigned",
+      farmer.scheduledDate || "Unscheduled",
+      farmer.perRate || 400,
+      farmer.totalCost || "",
     ]);
 
     // Apply styles to each cell

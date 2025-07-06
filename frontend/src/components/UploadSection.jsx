@@ -65,10 +65,17 @@ const UploadSection = ({ onSuccess }) => {
         },
       });
 
-      const { farmersData, sets, totalFarmers, totalAcres, totalPilots, id } =
-        response.data;
+      const {
+        farmersData,
+        pilotsData,
+        sets,
+        totalFarmers,
+        totalAcres,
+        totalPilots,
+        id,
+      } = response.data;
 
-      console.log(farmersData.splice(0, 5));
+      console.log(farmersData.slice(0, 5));
       setFilteredData(farmersData);
       setSets(sets || {});
 
@@ -91,7 +98,7 @@ const UploadSection = ({ onSuccess }) => {
         })
       );
 
-      onSuccess(id, totalInfo, farmersData, sets);
+      onSuccess(id, totalInfo, farmersData, pilotsData, sets);
     } catch (err) {
       setError(err.response?.data?.message || "Upload failed");
     } finally {

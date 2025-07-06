@@ -1,368 +1,3 @@
-// // 💡 Replace everything in BudgetSection.jsx with this
-// import React, { useState } from "react";
-// import axios from "axios";
-// import Select from "react-select";
-// import { useEffect } from "react";
-
-// function generateRandomSerial() {
-//   const letters = "SR";
-//   const numbers = Math.floor(10000 + Math.random() * 90000);
-//   return letters + numbers;
-// }
-
-// const INDIAN_DISTRICTS = [
-//   "Ahmednagar",
-//   "Akola",
-//   "Amravati",
-//   "Aurangabad",
-//   "Beed",
-//   "Bhandara",
-//   "Buldhana",
-//   "Chandrapur",
-//   "Dhule",
-//   "Gadchiroli",
-//   "Gondia",
-//   "Hingoli",
-//   "Jalgaon",
-//   "Jalna",
-//   "Kolhapur",
-//   "Latur",
-//   "Mumbai City",
-//   "Mumbai Suburban",
-//   "Nagpur",
-//   "Nanded",
-//   "Nandurbar",
-//   "Nashik",
-//   "Osmanabad",
-//   "Palghar",
-//   "Parbhani",
-//   "Pune",
-//   "Raigad",
-//   "Ratnagiri",
-//   "Sangli",
-//   "Satara",
-//   "Sindhudurg",
-//   "Solapur",
-//   "Thane",
-//   "Wardha",
-//   "Washim",
-//   "Yavatmal",
-// ];
-
-// const BudgetSection = ({ fileId, onGenerate }) => {
-//   const [budget, setBudget] = useState("");
-//   const [rate, setRate] = useState("");
-//   const [selectedDistrict, setSelectedDistrict] = useState("");
-
-//   const [recipientsCount, setRecipientsCount] = useState("");
-//   const [startDate, setStartDate] = useState("");
-//   const [endDate, setEndDate] = useState("");
-
-//   const [preferredSerialNo, setPreferredSerialNo] = useState("");
-
-//   const [error, setError] = useState("");
-//   const [isLoading, setIsLoading] = useState(false);
-
-//   const [crops, setCrops] = useState([{ name: "", percentage: "" }]);
-//   const [landSizePercentages, setLandSizePercentages] = useState({
-//     small: "",
-//     medium: "",
-//     large: "",
-//   });
-//   const [productUsePercentages, setProductUsePercentages] = useState({
-//     pesticide: "",
-//     fertilizer: "",
-//     pgr: "",
-//     biosimulant: "",
-//   });
-
-//   useEffect(() => {
-//     const serialNumber = generateRandomSerial();
-//     setPreferredSerialNo(serialNumber);
-//   }, []);
-
-//   const handleCropChange = (index, field, value) => {
-//     const updated = [...crops];
-//     updated[index][field] = value;
-//     setCrops(updated);
-//   };
-
-//   const addCropField = () => {
-//     setCrops([...crops, { name: "", percentage: "" }]);
-//   };
-
-//   const removeCropField = (index) => {
-//     setCrops(crops.filter((_, i) => i !== index));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     if (
-//       !fileId ||
-//       !budget ||
-//       !rate ||
-//       !selectedDistrict ||
-//       !recipientsCount ||
-//       !startDate ||
-//       !endDate
-//     ) {
-//       setError("Please fill all required fields.");
-//       return;
-//     }
-
-//     setError("");
-//     setIsLoading(true);
-
-//     try {
-//       const response = await axios.post("http://localhost:5000/api/generate", {
-//         fileId,
-//         totalBudget: parseFloat(budget),
-//         rate: parseFloat(rate),
-//         district: selectedDistrict,
-//         numberOfFarmers: parseInt(recipientsCount),
-//         crops,
-//         landSizePercentages,
-//         productUsePercentages,
-//         dateRange: { start: startDate, end: endDate },
-//         startSerial: preferredSerialNo,
-//       });
-
-//       if (response.data.success) {
-//         console.log(response.data.sampleData);
-//         onGenerate(response.data.sampleData);
-//       }
-//     } catch (err) {
-//       setError(err?.response?.data?.error || "Something went wrong.");
-//       console.error(err);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   return (
-//     <form
-//       onSubmit={handleSubmit}
-//       className="bg-white p-6 rounded shadow-md max-w-4xl mx-auto"
-//     >
-//       <h2 className="text-xl font-semibold mb-4">Farmer Targeting Inputs</h2>
-
-//       {error && (
-//         <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>
-//       )}
-
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//         <div>
-//           <label className="block text-sm font-medium mb-1">
-//             Total Budget (₹)
-//           </label>
-//           <input
-//             type="number"
-//             value={budget}
-//             onChange={(e) => setBudget(e.target.value)}
-//             className="w-full border p-2 rounded"
-//             required
-//           />
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium mb-1">
-//             Rate per Acre (₹)
-//           </label>
-//           <input
-//             type="number"
-//             value={rate}
-//             onChange={(e) => setRate(e.target.value)}
-//             className="w-full border p-2 rounded"
-//             required
-//           />
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium mb-1">District</label>
-//           <Select
-//             options={INDIAN_DISTRICTS.map((d) => ({ value: d, label: d }))}
-//             value={
-//               selectedDistrict
-//                 ? { value: selectedDistrict, label: selectedDistrict }
-//                 : null
-//             }
-//             onChange={(opt) => setSelectedDistrict(opt?.value || "")}
-//             placeholder="Select district"
-//             isClearable
-//           />
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium mb-1">
-//             Number of Farmers
-//           </label>
-//           <input
-//             type="number"
-//             value={recipientsCount}
-//             onChange={(e) => setRecipientsCount(e.target.value)}
-//             className="w-full border p-2 rounded"
-//             required
-//           />
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium mb-1">Start Date</label>
-//           <input
-//             type="date"
-//             value={startDate}
-//             onChange={(e) => setStartDate(e.target.value)}
-//             className="w-full border p-2 rounded"
-//             required
-//           />
-//         </div>
-
-//         <div>
-//           <label className="block text-sm font-medium mb-1">End Date</label>
-//           <input
-//             type="date"
-//             value={endDate}
-//             onChange={(e) => setEndDate(e.target.value)}
-//             className="w-full border p-2 rounded"
-//             required
-//           />
-//         </div>
-//       </div>
-
-//       <hr className="my-6" />
-
-//       <h3 className="font-medium mb-2">Crop Types & Percentages</h3>
-//       {crops.map((crop, index) => (
-//         <div key={index} className="flex gap-2 mb-2">
-//           <input
-//             type="text"
-//             placeholder="Crop name"
-//             value={crop.name}
-//             onChange={(e) => handleCropChange(index, "name", e.target.value)}
-//             className="flex-1 border p-2 rounded"
-//           />
-//           <input
-//             type="number"
-//             placeholder="%"
-//             value={crop.percentage}
-//             onChange={(e) =>
-//               handleCropChange(index, "percentage", e.target.value)
-//             }
-//             className="w-20 border p-2 rounded"
-//           />
-//           {index === crops.length - 1 && (
-//             <button
-//               type="button"
-//               onClick={addCropField}
-//               className="px-3 bg-green-500 text-white rounded"
-//             >
-//               +
-//             </button>
-//           )}
-//           {crops.length > 1 && (
-//             <button
-//               type="button"
-//               onClick={() => removeCropField(index)}
-//               className="px-3 bg-red-500 text-white rounded"
-//             >
-//               −
-//             </button>
-//           )}
-//         </div>
-//       ))}
-
-//       <hr className="my-6" />
-
-//       <h3 className="font-medium mb-2">Landholding Category (%)</h3>
-//       <div className="grid grid-cols-3 gap-4">
-//         {["small", "medium", "large"].map((type) => (
-//           <div key={type}>
-//             <label className="block text-sm font-medium mb-1 capitalize">
-//               {type}
-//             </label>
-//             <input
-//               type="number"
-//               value={landSizePercentages[type]}
-//               onChange={(e) =>
-//                 setLandSizePercentages((prev) => ({
-//                   ...prev,
-//                   [type]: e.target.value,
-//                 }))
-//               }
-//               className="w-full border p-2 rounded"
-//             />
-//           </div>
-//         ))}
-//       </div>
-
-//       <hr className="my-6" />
-
-//       <h3 className="font-medium mb-2">Product Use (%)</h3>
-//       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-//         {["pesticide", "fertilizer", "pgr", "biosimulant"].map((prod) => (
-//           <div key={prod}>
-//             <label className="block text-sm font-medium mb-1 capitalize">
-//               {prod}
-//             </label>
-//             <input
-//               type="number"
-//               value={productUsePercentages[prod]}
-//               onChange={(e) =>
-//                 setProductUsePercentages((prev) => ({
-//                   ...prev,
-//                   [prod]: e.target.value,
-//                 }))
-//               }
-//               className="w-full border p-2 rounded"
-//             />
-//           </div>
-//         ))}
-//       </div>
-
-//       <div>
-//         <label className="block text-sm font-medium text-gray-700 mb-1">
-//           Preferred Starting Serial Number
-//         </label>
-//         <input
-//           type="text"
-//           value={preferredSerialNo}
-//           onChange={(e) => {
-//             const value = e.target.value
-//               .replace(/[^a-zA-Z0-9]/g, "")
-//               .slice(0, 20);
-//             setPreferredSerialNo(value);
-//           }}
-//           placeholder="ex. SR12341"
-//           className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-//           required
-//           maxLength={20}
-//         />
-//         <p className="text-xs text-gray-500 mt-1">
-//           This will be the starting number for generated invoices (max 20
-//           alphanumeric characters)
-//         </p>
-//         {preferredSerialNo.length >= 10 && (
-//           <p className="text-xs text-red-500 mt-1">
-//             Maximum length reached (10 characters)
-//           </p>
-//         )}
-//       </div>
-
-//       <div className="mt-6">
-//         <button
-//           type="submit"
-//           disabled={isLoading}
-//           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-//         >
-//           {isLoading ? "Generating..." : "Generate Dispatch Plan"}
-//         </button>
-//       </div>
-//     </form>
-//   );
-// };
-
-// export default BudgetSection;
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Select from "react-select";
@@ -375,7 +10,9 @@ import {
   FiMapPin,
   FiPercent,
   FiHash,
+  FiRefreshCw,
 } from "react-icons/fi";
+import { FaIndianRupeeSign } from "react-icons/fa6";
 
 const API_URL = import.meta.env.VITE_API_ENDPOINT;
 
@@ -394,6 +31,7 @@ const INDIAN_DISTRICTS = [
   "Bhandara",
   "Buldhana",
   "Chandrapur",
+  "Chh. Sambhajinagar",
   "Dhule",
   "Gadchiroli",
   "Gondia",
@@ -442,8 +80,8 @@ const MAHARASHTRA_CROPS = [
   "Vegetables",
 ];
 
-const BudgetSection = ({ fileId, onGenerate }) => {
-  const [formData, setFormData] = useState({
+const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
+  const initialFormData = {
     budget: "",
     rate: "",
     selectedDistrict: "",
@@ -459,10 +97,89 @@ const BudgetSection = ({ fileId, onGenerate }) => {
       pgr: "",
       biosimulant: "",
     },
+  };
+
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedData = localStorage.getItem("budgetFormData");
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (
+          parsedData &&
+          typeof parsedData === "object" &&
+          "crops" in parsedData &&
+          "landSizePercentages" in parsedData &&
+          "productUsePercentages" in parsedData
+        ) {
+          return {
+            ...initialFormData,
+            ...parsedData,
+            crops: parsedData.crops?.length
+              ? parsedData.crops
+              : initialFormData.crops,
+          };
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse saved form data", e);
+    }
+    return initialFormData;
   });
 
+  useEffect(() => {
+    try {
+      if (
+        formData.budget ||
+        formData.rate ||
+        formData.selectedDistrict ||
+        formData.recipientsCount ||
+        formData.startDate ||
+        formData.endDate ||
+        formData.crops.some((c) => c.name || c.percentage) ||
+        Object.values(formData.landSizePercentages).some((v) => v) ||
+        Object.values(formData.productUsePercentages).some((v) => v)
+      ) {
+        localStorage.setItem("budgetFormData", JSON.stringify(formData));
+      }
+    } catch (e) {
+      console.error("Failed to save form data", e);
+    }
+  }, [formData]);
+
+  const [farmerCount, setFarmerCount] = useState(0);
+  const [pilotCount, setPilotCount] = useState(0);
+  const [filteredFarmers, setFilteredFarmers] = useState([]);
+  const [filteredPilots, setFilteredPilots] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const normalize = (str) => str?.toLowerCase().trim();
+
+    if (formData.selectedDistrict && farmersData && pilotsData) {
+      const farmersInDistrict = farmersData.filter(
+        (farmer) =>
+          normalize(farmer.district) === normalize(formData.selectedDistrict) &&
+          normalize(farmer.state) === "maharashtra"
+      );
+
+      const pilotsInDistrict = pilotsData.filter(
+        (pilot) =>
+          pilot.district &&
+          normalize(pilot.district) === normalize(formData.selectedDistrict)
+      );
+
+      setFarmerCount(farmersInDistrict.length);
+      setPilotCount(pilotsInDistrict.length);
+      setFilteredFarmers(farmersInDistrict);
+      setFilteredPilots(pilotsInDistrict);
+    } else {
+      setFarmerCount(0);
+      setPilotCount(0);
+      setFilteredFarmers([]);
+      setFilteredPilots([]);
+    }
+  }, [formData.selectedDistrict, farmersData, pilotsData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -491,6 +208,17 @@ const BudgetSection = ({ fileId, onGenerate }) => {
     }
   };
 
+  const handleReset = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to reset all form data? This cannot be undone."
+      )
+    ) {
+      setFormData(initialFormData);
+      localStorage.removeItem("budgetFormData");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -502,7 +230,6 @@ const BudgetSection = ({ fileId, onGenerate }) => {
         totalBudget: parseFloat(formData.budget),
         rate: parseFloat(formData.rate),
         district: formData.selectedDistrict,
-        numberOfFarmers: parseInt(formData.recipientsCount),
         crops: formData.crops.map((crop) => ({
           ...crop,
           percentage: parseFloat(crop.percentage),
@@ -536,26 +263,39 @@ const BudgetSection = ({ fileId, onGenerate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-8 py-6">
-            <h1 className="text-2xl font-bold text-white">
-              Farmer Targeting Configuration
-            </h1>
-            <p className="text-blue-100 mt-1">
-              Configure parameters for farmer selection and dispatch generation
-            </p>
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Dispatch Plan Configuration
+                </h1>
+                <p className="text-blue-100 text-sm mt-1">
+                  Configure parameters for farmer selection and budget
+                  allocation
+                </p>
+              </div>
+              <button
+                onClick={handleReset}
+                className="flex items-center px-3 py-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-blue-500 text-sm transition-colors"
+                title="Reset form"
+              >
+                <FiRefreshCw className="mr-2" />
+                Reset
+              </button>
+            </div>
           </div>
 
           {/* Form Content */}
-          <div className="p-8">
+          <div className="p-6">
             {error && (
-              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+              <div className="mb-5 bg-red-50 border-l-4 border-red-500 p-3 rounded-r">
                 <div className="flex items-center">
                   <svg
-                    className="h-5 w-5 text-red-500 mr-3"
+                    className="h-5 w-5 text-red-500 mr-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -565,172 +305,227 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <p className="text-red-700 font-medium">{error}</p>
+                  <p className="text-red-700 text-sm font-medium">{error}</p>
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Basic Information Section */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                  <FiMapPin className="mr-2 text-blue-600" />
-                  Basic Information
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Budget */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Total Budget (₹)
-                    </label>
-                    <div className="relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiDollarSign className="h-5 w-5 text-gray-400" />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Section 1: Budget & District */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Budget Card */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <FiDollarSign className="mr-2 text-blue-600" />
+                    Budget Details
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Total Budget (₹)
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaIndianRupeeSign className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="number"
+                          name="budget"
+                          value={formData.budget}
+                          onChange={handleChange}
+                          min={10000}
+                          max={10000000}
+                          className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="0.00"
+                          required
+                        />
                       </div>
-                      <input
-                        type="number"
-                        name="budget"
-                        value={formData.budget}
-                        onChange={handleChange}
-                        min={10000}
-                        max={10000000}
-                        className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rate per Acre (₹)
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FaIndianRupeeSign className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="number"
+                          name="rate"
+                          value={formData.rate}
+                          onChange={handleChange}
+                          className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="0.00"
+                          min={100}
+                          max={1000}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* District Card */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <FiMapPin className="mr-2 text-blue-600" />
+                    District Selection
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Select District
+                      </label>
+                      <Select
+                        options={INDIAN_DISTRICTS.map((d) => ({
+                          value: d,
+                          label: d,
+                        }))}
+                        value={
+                          formData.selectedDistrict
+                            ? {
+                                value: formData.selectedDistrict,
+                                label: formData.selectedDistrict,
+                              }
+                            : null
+                        }
+                        onChange={(opt) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedDistrict: opt?.value || "",
+                          }))
+                        }
+                        placeholder="Select district"
+                        classNamePrefix="react-select"
                         required
                       />
                     </div>
-                  </div>
 
-                  {/* Rate */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Rate per Acre (₹)
-                    </label>
-                    <div className="relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiDollarSign className="h-5 w-5 text-gray-400" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-blue-50 p-3 rounded-md">
+                        <p className="text-xs font-medium text-blue-600">
+                          Available Farmers
+                        </p>
+                        <p className="text-xl font-bold text-blue-800">
+                          {farmerCount}
+                        </p>
                       </div>
-                      <input
-                        type="number"
-                        name="rate"
-                        value={formData.rate}
-                        onChange={handleChange}
-                        className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                        min={100}
-                        max={1000}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* District */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      District
-                    </label>
-                    <Select
-                      options={INDIAN_DISTRICTS.map((d) => ({
-                        value: d,
-                        label: d,
-                      }))}
-                      value={
-                        formData.selectedDistrict
-                          ? {
-                              value: formData.selectedDistrict,
-                              label: formData.selectedDistrict,
-                            }
-                          : null
-                      }
-                      onChange={(opt) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          selectedDistrict: opt?.value || "",
-                        }))
-                      }
-                      placeholder="Select district"
-                      classNamePrefix="react-select"
-                      required
-                    />
-                  </div>
-
-                  {/* Number of Farmers */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Number of Farmers
-                    </label>
-                    <div className="relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiUser className="h-5 w-5 text-gray-400" />
+                      <div className="bg-green-50 p-3 rounded-md">
+                        <p className="text-xs font-medium text-green-600">
+                          Available Pilots
+                        </p>
+                        <p className="text-xl font-bold text-green-800">
+                          {pilotCount}
+                        </p>
                       </div>
-                      <input
-                        type="number"
-                        name="recipientsCount"
-                        value={formData.recipientsCount}
-                        onChange={handleChange}
-                        className="block w-full pl-10 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter number"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Date Range */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Start Date
-                    </label>
-                    <div className="relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiCalendar className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleChange}
-                        className="block w-full pl-10 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      End Date
-                    </label>
-                    <div className="relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiCalendar className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="date"
-                        name="endDate"
-                        value={formData.endDate}
-                        onChange={handleChange}
-                        className="block w-full pl-10 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Crop Configuration Section */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Crop Configuration
-                </h2>
+              {/* Section 2: Dates & Serial */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Dates Card */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <FiCalendar className="mr-2 text-blue-600" />
+                    Date Range
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiCalendar className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="date"
+                          name="startDate"
+                          value={formData.startDate}
+                          onChange={handleChange}
+                          className="block w-full pl-8 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiCalendar className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                          type="date"
+                          name="endDate"
+                          value={formData.endDate}
+                          onChange={handleChange}
+                          className="block w-full pl-8 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serial Number Card */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <FiHash className="mr-2 text-blue-600" />
+                    Serial Number
+                  </h2>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Starting Serial
+                    </label>
+                    <div className="relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FiHash className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        name="preferredSerialNo"
+                        value={formData.preferredSerialNo}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/[^a-zA-Z0-9]/g, "")
+                            .slice(0, 20);
+                          setFormData((prev) => ({
+                            ...prev,
+                            preferredSerialNo: value,
+                          }));
+                        }}
+                        className="block w-full pl-8 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., SR10001"
+                        required
+                        maxLength={20}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Starting number for generated invoices
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Crops */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                  <FiPercent className="mr-2 text-blue-600" />
+                  Crop Distribution
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {formData.crops.map((crop, index) => (
                     <div
                       key={index}
-                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                      className="bg-white p-3 rounded-md border border-gray-200"
                     >
-                      <div className="space-y-3">
-                        {/* Crop Name */}
+                      <div className="space-y-2">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Crop
@@ -754,7 +549,6 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                           />
                         </div>
 
-                        {/* Percentage */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Percentage
@@ -763,7 +557,6 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                             <input
                               type="number"
                               value={crop.percentage}
-                              
                               onChange={(e) =>
                                 handleCropChange(
                                   index,
@@ -771,25 +564,24 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                                   e.target.value
                                 )
                               }
-                              className="block w-full py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                              className="block w-full py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                               placeholder="0-100"
                               min="0"
                               max="100"
                               required
                             />
                             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                              <FiPercent className="h-4 w-4 text-gray-400" />
+                              <FiPercent className="h-3 w-3 text-gray-400" />
                             </div>
                           </div>
                         </div>
 
-                        {/* Add/Remove Buttons */}
                         <div className="flex justify-between pt-1">
                           {index === formData.crops.length - 1 && (
                             <button
                               type="button"
                               onClick={addCropField}
-                              className="text-xs inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              className="text-xs inline-flex items-center px-2 py-1 border border-transparent rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500"
                             >
                               <FiPlus className="h-3 w-3 mr-1" /> Add
                             </button>
@@ -798,7 +590,7 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                             <button
                               type="button"
                               onClick={() => removeCropField(index)}
-                              className="text-xs inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              className="text-xs inline-flex items-center px-2 py-1 border border-transparent rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500"
                             >
                               <FiTrash2 className="h-3 w-3 mr-1" /> Remove
                             </button>
@@ -810,17 +602,17 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                 </div>
               </div>
 
-              {/* Landholding and Product Use Sections */}
-              <div className="space-y-6">
-                {/* Landholding Category */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                    Landholding Categories (%)
+              {/* Section 4: Land Size & Product Use */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Land Size */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                    Landholding Distribution (%)
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { key: "small", label: "Small (0-2 acres)" },
-                      { key: "medium", label: "Medium (3-10 acres)" },
+                      { key: "medium", label: "Med (3-10 acres)" },
                       { key: "large", label: "Large (10+ acres)" },
                     ].map((item) => (
                       <div key={item.key} className="space-y-1">
@@ -840,13 +632,13 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                                 },
                               }))
                             }
-                            className="block w-full py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="block w-full py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             placeholder="0-100"
                             min="0"
                             max="100"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <FiPercent className="h-4 w-4 text-gray-400" />
+                            <FiPercent className="h-3 w-3 text-gray-400" />
                           </div>
                         </div>
                       </div>
@@ -855,11 +647,11 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                 </div>
 
                 {/* Product Use */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-800 mb-3">
                     Product Usage (%)
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { key: "pesticide", label: "Pesticide" },
                       { key: "fertilizer", label: "Fertilizer" },
@@ -883,13 +675,13 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                                 },
                               }))
                             }
-                            className="block w-full py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="block w-full py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             placeholder="0-100"
                             min="0"
                             max="100"
                           />
                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <FiPercent className="h-4 w-4 text-gray-400" />
+                            <FiPercent className="h-3 w-3 text-gray-400" />
                           </div>
                         </div>
                       </div>
@@ -898,57 +690,17 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                 </div>
               </div>
 
-              {/* Serial Number */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Invoice Settings
-                </h2>
-
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Starting Serial Number
-                  </label>
-                  <div className="relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FiHash className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      name="preferredSerialNo"
-                      value={formData.preferredSerialNo}
-                      onChange={(e) => {
-                        const value = e.target.value
-                          .replace(/[^a-zA-Z0-9]/g, "")
-                          .slice(0, 20);
-                        setFormData((prev) => ({
-                          ...prev,
-                          preferredSerialNo: value,
-                        }));
-                      }}
-                      className="block w-full pl-10 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., SR10001"
-                      required
-                      maxLength={20}
-                    />
-                  </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    This will be the starting number for generated invoices
-                    (alphanumeric, max 20 chars)
-                  </p>
-                </div>
-              </div>
-
               {/* Submit Button */}
-              <div className="pt-4">
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full md:w-auto px-8 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full px-4 py-2.5 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -967,7 +719,7 @@ const BudgetSection = ({ fileId, onGenerate }) => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Generating...
+                      Generating Dispatch Plan...
                     </span>
                   ) : (
                     "Generate Dispatch Plan"

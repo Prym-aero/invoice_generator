@@ -397,7 +397,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                 Crop
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Pesticide
+                used_medicine
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Pincode
@@ -407,6 +407,12 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Scheduled Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Rate
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total Cost
               </th>
             </tr>
           </thead>
@@ -439,7 +445,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                     {invoice.crop}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice?.pesticide_use === true ? "True" : "False"}
+                    {invoice.used_medicine?.join(", ")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.pincode}
@@ -449,6 +455,12 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.scheduledDate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.perRate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.totalCost.toFixed(2)}
                   </td>
                 </tr>
               ))

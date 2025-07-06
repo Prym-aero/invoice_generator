@@ -14,7 +14,7 @@ router.post("/generate", async (req, res) => {
 
 
         // Validate inputs more thoroughly
-        if (!fileId || !district || !numberOfFarmers) {
+        if (!fileId || !district) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
@@ -50,7 +50,6 @@ router.post("/generate", async (req, res) => {
             totalBudget,
             rate,
             district,
-            numberOfFarmers,
             crops,
             landSizePercentages,
             productUsePercentages,
@@ -69,7 +68,7 @@ router.post("/generate", async (req, res) => {
 
         const excelBuffer = await generateExcelWithExcelJS(processedData);
 
-        
+
 
         // Create dispatch record with size validation
         try {

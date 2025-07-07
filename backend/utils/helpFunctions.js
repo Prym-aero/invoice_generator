@@ -51,7 +51,6 @@ const excelToJsonFarmer = async (fileBuffer) => {
     };
   });
 
-  console.log(properData);
 
   return properData;
 }
@@ -65,7 +64,7 @@ const excelToJsonPilots = async (fileBuffer) => {
 
   const pilots = jsonData.map((data) => ({
     name: data['Drone_Pilot_Name'],
-    district: data['District'],
+    district: data['District'].trim(),
     assignedTalukas:
       data["Taluka"]
         .split("/")
@@ -132,20 +131,20 @@ async function generateExcelWithExcelJS(processedData) {
 
   // Set column widths and headers
   worksheet.columns = [
-    { header: 'Sr. No.', key: 'serialNumber', width: 8 },
+    { header: 'Sr. No.', key: 'serialNumber', width: 10 },
     { header: 'Farmer Name', key: 'name', width: 25 },
     { header: 'Mobile', key: 'mobile', width: 15 },
-    { header: 'Taluka_Or_City', key: 'taluka', width: 15 },
+    { header: 'Taluka_Or_City', key: 'taluka', width: 18 },
     { header: 'District', key: 'district', width: 18 },
-    { header: 'State', key: 'state', width: 15 },
+    { header: 'State', key: 'state', width: 18 },
     { header: 'Pincode', key: 'pincode', width: 18 },
     { header: 'Acres', key: 'acres', width: 10 },
-    { header: 'Crop', key: 'crop', width: 10 },
-    { header: 'usedb medicine', key: 'used_medicine', width: 12 },
-    { header: 'Pilot', key: 'assignedPilot', width: 18 },
-    { header: 'Date', key: 'scheduledDate', width: 18 },
+    { header: 'Crop', key: 'crop', width: 14 },
+    { header: 'usedb medicine', key: 'used_medicine', width: 18 },
+    { header: 'Pilot', key: 'assignedPilot', width: 25 },
+    { header: 'Date', key: 'scheduledDate', width: 20 },
     { header: 'Rate', key: 'perRate', width: 13 },
-    { header: 'Total Cost', key: 'totalCost', width: 14 },
+    { header: 'Total Cost', key: 'totalCost', width: 16 },
 
   ];
 

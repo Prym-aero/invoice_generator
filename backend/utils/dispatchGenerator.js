@@ -74,8 +74,11 @@ function generateDispatchData({
         }
     }
 
+    // Call helper function here to add extra farmers if needed
+    addExtraFarmersToFulfillTargets(eligibleFarmers, selectedFarmers, totalAcres, totalBudget, rate);
+
     assignCrops(selectedFarmers, crops);
-    assignProductUsage(selectedFarmers, productUsePercentages); // keep logic, don’t show extra fields
+    assignProductUsage(selectedFarmers, productUsePercentages);
     assignPilots(selectedFarmers, pilots);
     assignDates(selectedFarmers, dateRange);
     assignSerialNumbers(selectedFarmers, startSerial);
@@ -83,9 +86,51 @@ function generateDispatchData({
     return selectedFarmers;
 }
 
+function addExtraFarmersToFulfillTargets(eligibleFarmers, selectedFarmers, totalAcres, totalBudget, rate) {
+    // Filter farmers with acres between 10 and 35
+    const extraCandidates = eligibleFarmers.filter(f => f.acres >= 10 && f.acres <= 35);
+
+    if (extraCandidates.length === 0) {
+        console.warn('No farmers with acres between 10 and 35 found for extra addition.');
+        return;
+    }
+
+    let totalSelectedAcres = selectedFarmers.reduce((sum, f) => sum + f.acres, 0);
+    let totalCost = getTotalCost(selectedFarmers);
+
+    let idx = 0;
+
+    // Loop until targets are met or safety break reached
+    while (totalSelectedAcres < totalAcres && totalCost < totalBudget) {
+        const farmer = extraCandidates[idx % extraCandidates.length];
+        const farmerTotalCost = farmer.acres * rate;
+
+        if (totalSelectedAcres + farmer.acres <= totalAcres && totalCost + farmerTotalCost <= totalBudget) {
+            // Add a copy of the farmer
+            selectedFarmers.push({
+                ...farmer,
+                perRate: rate,
+                totalCost: farmerTotalCost,
+                repeated: true,  // mark as repeated if needed
+            });
+
+            totalSelectedAcres += farmer.acres;
+            totalCost += farmerTotalCost;
+        }
+
+        idx++;
+
+        // Safety break to avoid infinite loop
+        if (idx > extraCandidates.length * 20) break;
+    }
+}
+
+
+
 function getTotalCost(farmers) {
     return farmers.reduce((sum, f) => sum + (f.totalCost || 0), 0);
 }
+
 
 function pickRandom(array, count) {
     const shuffled = [...array].sort(() => 0.5 - Math.random());
@@ -154,13 +199,23 @@ function normalize(str) {
 function assignPilots(farmers, pilots) {
     farmers.forEach(f => {
         const farmerTaluka = normalize(f.taluka);
+        const farmerDistrict = normalize(f.district);
 
-        const availablePilots = pilots.filter(p =>
+        // Try to find pilots assigned to the same taluka
+        let availablePilots = pilots.filter(p =>
             p.assignedTalukas?.some(t => normalize(t) === farmerTaluka)
         );
 
-        if (!availablePilots.length) {
-            console.warn(`❌ No pilot found for farmer '${f.name}' in taluka '${f.taluka}'`);
+        // If none found in taluka, fallback to pilots from the same district
+        if (availablePilots.length === 0) {
+            availablePilots = pilots.filter(p =>
+                normalize(p.district) === farmerDistrict
+            );
+        }
+
+        // Final fallback if still none found
+        if (availablePilots.length === 0) {
+            console.warn(`❌ No pilot found for farmer '${f.name}' in taluka '${f.taluka}' or district '${f.district}'`);
         }
 
         f.assignedPilot = availablePilots.length
@@ -168,6 +223,7 @@ function assignPilots(farmers, pilots) {
             : "Unassigned";
     });
 }
+
 
 function assignDates(farmers, { start, end }) {
     const startDate = new Date(start);

@@ -335,6 +335,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                           onChange={handleChange}
                           min={10000}
                           max={10000000}
+                          onWheel={(e) => e.target.blur()}
                           className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                           placeholder="0.00"
                           required
@@ -357,6 +358,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                           onChange={handleChange}
                           className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                           placeholder="0.00"
+                          onWheel={(e) => e.target.blur()}
                           min={100}
                           max={1000}
                           required
@@ -557,6 +559,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                             <input
                               type="number"
                               value={crop.percentage}
+                              onWheel={(e) => e.target.blur()}
                               onChange={(e) =>
                                 handleCropChange(
                                   index,
@@ -623,6 +626,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                           <input
                             type="number"
                             value={formData.landSizePercentages[item.key]}
+                            onWheel={(e) => e.target.blur()}
                             onChange={(e) =>
                               setFormData((prev) => ({
                                 ...prev,
@@ -666,6 +670,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                           <input
                             type="number"
                             value={formData.productUsePercentages[item.key]}
+                            onWheel={(e) => e.target.blur()}
                             onChange={(e) =>
                               setFormData((prev) => ({
                                 ...prev,

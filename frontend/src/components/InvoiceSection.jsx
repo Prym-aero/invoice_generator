@@ -314,7 +314,7 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
   return (
     <div className="bg-white rounded-xl shadow-md p-6 print-content">
       <h2 className="text-xl font-semibold mb-4 text-gray-800">
-        Generated Invoices
+        Generated Analytics
       </h2>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 no-print">

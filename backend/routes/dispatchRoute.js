@@ -44,7 +44,7 @@ router.post("/generate", async (req, res) => {
         }
 
         // Generate dispatch data with validation
-        const processedData = generateDispatchData({
+        const processedData = await generateDispatchData({
             farmers,
             pilots,
             totalBudget,
@@ -57,7 +57,7 @@ router.post("/generate", async (req, res) => {
             startSerial
         });
 
-        console.log(processedData);
+        console.log((await processedData).slice(0, 5));
 
 
 

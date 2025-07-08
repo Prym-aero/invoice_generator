@@ -509,7 +509,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                       />
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Starting number for generated invoices
+                      Serial number for generated farmer 
                     </p>
                   </div>
                 </div>

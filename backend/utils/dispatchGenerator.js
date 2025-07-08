@@ -1,4 +1,4 @@
-function generateDispatchData({
+async function generateDispatchData({
     farmers,
     pilots,
     totalBudget,
@@ -74,6 +74,41 @@ function generateDispatchData({
         }
     }
 
+    function addExtraFarmersToFulfillTargets(eligibleFarmers, selectedFarmers, totalAcres, totalBudget, rate) {
+        const extraCandidates = [...eligibleFarmers];
+
+        if (extraCandidates.length === 0) {
+            console.warn('No eligible farmers available for extra addition.');
+            return;
+        }
+
+        let totalSelectedAcres = selectedFarmers.reduce((sum, f) => sum + f.acres, 0);
+        let totalCost = getTotalCost(selectedFarmers);
+
+        let idx = 0;
+
+        while (totalSelectedAcres < totalAcres && totalCost < totalBudget) {
+            const farmer = extraCandidates[idx % extraCandidates.length];
+            const farmerTotalCost = farmer.acres * rate;
+
+            if (totalSelectedAcres + farmer.acres <= totalAcres && totalCost + farmerTotalCost <= totalBudget) {
+                selectedFarmers.push({
+                    ...farmer,
+                    perRate: rate,
+                    totalCost: farmerTotalCost,
+                });
+
+                totalSelectedAcres += farmer.acres;
+                totalCost += farmerTotalCost;
+            }
+
+            idx++;
+
+            if (idx > extraCandidates.length * 50) break; // safety break
+        }
+    }
+
+
     // Call helper function here to add extra farmers if needed
     addExtraFarmersToFulfillTargets(eligibleFarmers, selectedFarmers, totalAcres, totalBudget, rate);
 
@@ -86,44 +121,7 @@ function generateDispatchData({
     return selectedFarmers;
 }
 
-function addExtraFarmersToFulfillTargets(eligibleFarmers, selectedFarmers, totalAcres, totalBudget, rate) {
-    // Filter farmers with acres between 10 and 35
-    const extraCandidates = eligibleFarmers.filter(f => f.acres >= 10 && f.acres <= 35);
 
-    if (extraCandidates.length === 0) {
-        console.warn('No farmers with acres between 10 and 35 found for extra addition.');
-        return;
-    }
-
-    let totalSelectedAcres = selectedFarmers.reduce((sum, f) => sum + f.acres, 0);
-    let totalCost = getTotalCost(selectedFarmers);
-
-    let idx = 0;
-
-    // Loop until targets are met or safety break reached
-    while (totalSelectedAcres < totalAcres && totalCost < totalBudget) {
-        const farmer = extraCandidates[idx % extraCandidates.length];
-        const farmerTotalCost = farmer.acres * rate;
-
-        if (totalSelectedAcres + farmer.acres <= totalAcres && totalCost + farmerTotalCost <= totalBudget) {
-            // Add a copy of the farmer
-            selectedFarmers.push({
-                ...farmer,
-                perRate: rate,
-                totalCost: farmerTotalCost,
-                repeated: true,  // mark as repeated if needed
-            });
-
-            totalSelectedAcres += farmer.acres;
-            totalCost += farmerTotalCost;
-        }
-
-        idx++;
-
-        // Safety break to avoid infinite loop
-        if (idx > extraCandidates.length * 20) break;
-    }
-}
 
 
 
@@ -184,10 +182,12 @@ function assignProductUsage(farmers, productPercentages) {
     farmers.forEach(farmer => {
         if (!Array.isArray(farmer.used_medicine) || farmer.used_medicine.length === 0) {
             const randomProduct = productKeys[Math.floor(Math.random() * productKeys.length)];
-            farmer.used_medicine = [randomProduct];
+            farmer.used_medicine = []; // ✅ FIX: Initialize before push
+            farmer.used_medicine.push(randomProduct);
         }
     });
 }
+
 
 
 

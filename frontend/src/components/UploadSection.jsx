@@ -59,11 +59,9 @@ const UploadSection = ({ onSuccess }) => {
       formData.append("pilotsFile", pilotFile);
       formData.append("state", stateValue);
 
-      const response = await axios.post(`${API_URL}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      console.log(formData);
+
+      const response = await axios.post(`${API_URL}/upload`, formData,);
 
       const {
         farmersData,

@@ -17,6 +17,37 @@ async function generateDispatchData({
         return str.trim().toLowerCase();
     };
 
+    // Step 1: Normalize district
+    const normalizedDistrict = normalize(district);
+
+    // Step 2: Find a sample taluka from the same district
+    const referenceFarmer = farmers.find(f =>
+        normalize(f.district) === normalizedDistrict &&
+        typeof f.taluka === 'string' &&
+        f.taluka.trim() !== ""
+    );
+
+    const fallbackTaluka = referenceFarmer?.taluka || 'Default Taluka';
+
+    // Step 3: Fill missing talukas
+    farmers = farmers.map(farmer => {
+        let updatedFarmer = { ...farmer };
+
+        // Assign taluka if missing
+        if (!farmer.taluka || typeof farmer.taluka !== 'string' || farmer.taluka.trim() === "") {
+            updatedFarmer.taluka = fallbackTaluka;
+        }
+
+        // Optionally fix 0-acre farmers too here (optional)
+        if (!farmer.acres || farmer.acres === 0) {
+            updatedFarmer.acres = Math.floor(Math.random() * 6) + 5;
+        }
+
+        return updatedFarmer;
+    });
+
+
+
     let eligibleFarmers = farmers.filter(
         (f) => normalize(f.district) === normalize(district)
     );
@@ -114,7 +145,7 @@ async function generateDispatchData({
             idx++;
             if (idx > extraCandidates.length * 50) break; // safety break
         }
-        
+
     }
 
 

@@ -45,7 +45,7 @@ const excelToJsonFarmer = async (fileBuffer) => {
       mobile: farmer.mobile_number,
       acres: farmer.landholding_acres, // ← you missed `farmer.` here
       state: farmer.state,
-      district: farmer.district.trim(),
+      district: farmer.district,
       taluka: farmer.taluka_or_city,
       pincode: farmer.pincode
     };

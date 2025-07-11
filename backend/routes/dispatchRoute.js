@@ -57,7 +57,7 @@ router.post("/generate", async (req, res) => {
             startSerial
         });
 
-        console.log((await processedData).slice(0, 5));
+
 
 
 

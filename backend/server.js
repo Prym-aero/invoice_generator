@@ -15,7 +15,6 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 
 const FileRoute = require('./routes/Files');
-const budgetRoute = require('./routes/budget');
 const invoiceRoute = require('./routes/invoiceRoute');
 const dispatchRoute = require('./routes/dispatchRoute');
 
@@ -24,7 +23,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', FileRoute);
-app.use('/api', budgetRoute)
 app.use('/api', invoiceRoute);
 app.use('/api', dispatchRoute);
 

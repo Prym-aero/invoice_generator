@@ -154,7 +154,10 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const normalize = (str) => str?.toLowerCase().trim();
+    const normalize = (str) => {
+      if (typeof str !== "string") return "";
+      return str.trim().toLowerCase();
+    };
 
     if (formData.selectedDistrict && farmersData && pilotsData) {
       const farmersInDistrict = farmersData.filter(
@@ -509,7 +512,7 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                       />
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Serial number for generated farmer 
+                      Serial number for generated farmer
                     </p>
                   </div>
                 </div>

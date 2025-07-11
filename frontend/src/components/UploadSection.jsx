@@ -75,7 +75,7 @@ const UploadSection = ({ onSuccess }) => {
         id,
       } = response.data;
 
-      console.log(farmersData.slice(0, 5));
+      
       setFilteredData(farmersData);
       setSets(sets || {});
 
@@ -85,7 +85,6 @@ const UploadSection = ({ onSuccess }) => {
         pilots: totalPilots,
       };
       setTotal(totalInfo);
-      console.log(totalInfo);
 
       // Store in localStorage
       localStorage.setItem(

@@ -12,7 +12,11 @@ async function generateDispatchData({
 }) {
     const totalAcres = totalBudget / rate;
 
-    const normalize = (str) => str?.trim().toLowerCase();
+    const normalize = (str) => {
+        if (typeof str !== "string") return "";
+        return str.trim().toLowerCase();
+    };
+
     let eligibleFarmers = farmers.filter(
         (f) => normalize(f.district) === normalize(district)
     );
@@ -87,11 +91,16 @@ async function generateDispatchData({
 
         let idx = 0;
 
-        while (totalSelectedAcres < totalAcres && totalCost < totalBudget) {
+        while (
+            totalSelectedAcres < totalAcres &&
+            totalCost < totalBudget &&
+            selectedFarmers.length < 500 // <- prevent bloating
+        ) {
             const farmer = extraCandidates[idx % extraCandidates.length];
             const farmerTotalCost = farmer.acres * rate;
 
-            if (totalSelectedAcres + farmer.acres <= totalAcres && totalCost + farmerTotalCost <= totalBudget) {
+            if (totalSelectedAcres + farmer.acres <= totalAcres &&
+                totalCost + farmerTotalCost <= totalBudget) {
                 selectedFarmers.push({
                     ...farmer,
                     perRate: rate,
@@ -103,9 +112,9 @@ async function generateDispatchData({
             }
 
             idx++;
-
             if (idx > extraCandidates.length * 50) break; // safety break
         }
+        
     }
 
 

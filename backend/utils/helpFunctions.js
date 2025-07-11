@@ -49,9 +49,11 @@ const excelToJsonFarmer = async (filePath) => {
       state: farmer.state,
       district: farmer.district,
       taluka: farmer.taluka_or_city,
-      pincode: farmer.pincode
+      pincode: farmer.pincode || "431203"
     };
   });
+
+  console.log(properData.slice(0,5));
 
 
   return properData;
@@ -75,6 +77,9 @@ const excelToJsonPilots = async (filePath) => {
         .filter(Boolean)
   }));
 
+
+
+  console.log(pilots.slice(0,5));
 
 
 

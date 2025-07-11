@@ -8,7 +8,7 @@ const DispatchRecord = require('../models/DispatchRecord');
 const { excelToJsonFarmer, excelToJsonPilots } = require("../utils/helpFunctions");
 
 // Ensure uploads folder exists
-const uploadDir = path.join(__dirname, "..", "uploads");
+const uploadDir = '/temp';
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 const storage = multer.diskStorage({

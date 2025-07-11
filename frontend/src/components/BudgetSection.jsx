@@ -78,6 +78,7 @@ const MAHARASHTRA_CROPS = [
   "Sunflower",
   "Fruits",
   "Vegetables",
+  "Tur",
 ];
 
 const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {

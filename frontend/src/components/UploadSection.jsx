@@ -59,9 +59,11 @@ const UploadSection = ({ onSuccess }) => {
       formData.append("pilotsFile", pilotFile);
       formData.append("state", stateValue);
 
-      console.log(formData);
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
 
-      const response = await axios.post(`${API_URL}/upload`, formData,);
+      const response = await axios.post(`${API_URL}/upload`, formData);
 
       const {
         farmersData,
@@ -73,7 +75,6 @@ const UploadSection = ({ onSuccess }) => {
         id,
       } = response.data;
 
-      
       setFilteredData(farmersData);
       setSets(sets || {});
 

@@ -1,5 +1,6 @@
 const xlsx = require('xlsx');
 const ExcelJS = require('exceljs');
+const fs = require('fs');
 function parseSerialNumber(input) {
   if (!input) return { prefix: 'SR', number: 10000 }; // Default
 
@@ -34,7 +35,8 @@ function distributeAcres(numFarmers, totalAcres) {
   return distributed.map(a => Math.max(0.1, a)); // Minimum 0.1 acres per farmer
 }
 
-const excelToJsonFarmer = async (fileBuffer) => {
+const excelToJsonFarmer = async (filePath) => {
+  const fileBuffer = await fs.readFileSync(filePath); // ⬅️ read buffer from disk
   const workbook = xlsx.read(fileBuffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -57,7 +59,8 @@ const excelToJsonFarmer = async (fileBuffer) => {
 
 
 
-const excelToJsonPilots = async (fileBuffer) => {
+const excelToJsonPilots = async (filePath) => {
+  const fileBuffer = await fs.readFileSync(filePath); // ⬅️ read buffer from disk
   const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
   const sheetName = workbook.SheetNames[0];
   const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);

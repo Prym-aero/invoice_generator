@@ -7,10 +7,10 @@ const FileSchema = new mongoose.Schema({
   pilotFileName: String,
   processedFileName: String, // Optional: if you're storing exported Excel
   filePaths: {
-    farmer: Buffer, // e.g. path to uploaded file or GridFS reference
-    pilot: Buffer,
+    farmer: String, // e.g. path to uploaded file or GridFS reference
+    pilot: String,
     processedFile: {
-      data: Buffer,
+      path: String,
       contentType: String,
     },
   },

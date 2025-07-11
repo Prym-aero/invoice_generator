@@ -1,11 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const path = require('path')
+const fs = require('fs')
 const File = require("../models/FileModel");
 const DispatchRecord = require('../models/DispatchRecord');
 const { excelToJsonFarmer, excelToJsonPilots } = require("../utils/helpFunctions");
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Ensure uploads folder exists
+const uploadDir = path.join(__dirname, "..", "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage });
 
 router.post(
   "/upload",
@@ -17,49 +32,32 @@ router.post(
     try {
       const farmersFile = req.files.farmersFile?.[0];
       const pilotsFile = req.files.pilotsFile?.[0];
-
-      console.log('Received files:', req.files);
-      console.log('Received body:', req.body);
-
+      const state = req.body.state;
 
       if (!farmersFile || !pilotsFile) {
-        return res
-          .status(400)
-          .json({ message: "Both farmersFile and pilotsFile are required." });
+        return res.status(400).json({ message: "Both farmersFile and pilotsFile are required." });
       }
 
-      // Parse the files
-      const farmers = await excelToJsonFarmer(farmersFile.buffer);
-      const pilots = await excelToJsonPilots(pilotsFile.buffer);
+      // Read Excel files from disk (not memory)
+      const farmers = await excelToJsonFarmer(farmersFile.path);
+      const pilots = await excelToJsonPilots(pilotsFile.path);
 
       const totalFarmers = farmers.length;
-      const totalAcres = farmers.reduce(
-        (acc, f) => acc + parseFloat(f.acres || 0),
-        0
-      );
+      const totalAcres = farmers.reduce((acc, f) => acc + parseFloat(f.acres || 0), 0);
       const totalPilots = pilots.length;
 
-      // Save metadata (not full buffers to avoid MongoDB size limits)
       const fileDoc = await File.create({
         farmerFileName: farmersFile.originalname,
         pilotFileName: pilotsFile.originalname,
+        filePaths: {
+          farmer: farmersFile.path,
+          pilot: pilotsFile.path,
+        },
         totals: {
           farmers: totalFarmers,
           acres: totalAcres,
           pilots: totalPilots,
-        },
-        filePaths: {
-          farmer: farmersFile.buffer, // you're storing in memory for now
-          pilot: pilotsFile.buffer,
-        },
-        farmersFile: {
-          data: farmersFile.buffer,
-          contentType: farmersFile.mimetype,
-        },
-        pilotsFile: {
-          data: pilotsFile.buffer,
-          contentType: pilotsFile.mimetype,
-        },
+        }
       });
 
       res.status(200).json({
@@ -74,8 +72,7 @@ router.post(
       });
     } catch (err) {
       console.error("Upload error:", err);
-      res.status(500).json({ message: err.message || "Upload failed" });
-
+      res.status(500).json({ message: err.message });
     }
   }
 );
@@ -84,17 +81,14 @@ router.post(
 router.get("/download/:id", async (req, res) => {
   try {
     const file = await File.findById(req.params.id);
-    if (!file || !file.filePaths.processedFile) {
+    const processed = file?.filePaths?.processedFile;
+
+    if (!processed || !processed.path || !fs.existsSync(processed.path)) {
       return res.status(404).json({ error: "Processed file not found" });
     }
 
-    res.set({
-      "Content-Type": file.filePaths.processedFile.contentType,
-      "Content-Disposition": `attachment; filename="farmers_data_${file._id}.xlsx"`,
-      "Content-Length": file.filePaths.processedFile.data.length
-    });
-
-    res.send(file.filePaths.processedFile.data);
+    const fileName = `farmers_data_${file._id}.xlsx`;
+    res.download(processed.path, fileName); // Automatically sets content-type and headers
   } catch (err) {
     console.error("Download error:", err);
     res.status(500).json({ error: "Download failed" });

@@ -18,6 +18,10 @@ router.post(
       const farmersFile = req.files.farmersFile?.[0];
       const pilotsFile = req.files.pilotsFile?.[0];
 
+      console.log('Received files:', req.files);
+      console.log('Received body:', req.body);
+
+
       if (!farmersFile || !pilotsFile) {
         return res
           .status(400)
@@ -70,7 +74,8 @@ router.post(
       });
     } catch (err) {
       console.error("Upload error:", err);
-      res.status(500).json({ message: "Upload failed" });
+      res.status(500).json({ message: err.message || "Upload failed" });
+
     }
   }
 );

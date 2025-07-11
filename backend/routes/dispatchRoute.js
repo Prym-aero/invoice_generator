@@ -80,7 +80,7 @@ router.post("/generate", async (req, res) => {
         const excelBuffer = await generateExcelWithExcelJS(processedData);
 
         // Save generated Excel file to disk
-        const uploadsDir = '/temp';
+        const uploadsDir = path.join(__dirname, "../uploads");
         if (!fs.existsSync(uploadsDir)) {
             fs.mkdirSync(uploadsDir);
         }

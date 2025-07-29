@@ -5,6 +5,8 @@ const path = require('path')
 const fs = require('fs')
 const File = require("../models/FileModel");
 const DispatchRecord = require('../models/DispatchRecord');
+const axios = require('axios');
+const xlsx = require('xlsx');
 const { excelToJsonFarmer, excelToJsonPilots } = require("../utils/helpFunctions");
 
 // Ensure uploads folder exists
@@ -22,60 +24,109 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post(
-  "/upload",
-  upload.fields([
-    { name: "farmersFile", maxCount: 1 },
-    { name: "pilotsFile", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const farmersFile = req.files.farmersFile?.[0];
-      const pilotsFile = req.files.pilotsFile?.[0];
-      const state = req.body.state;
+async function downloadAndParseCsv(url) {
+  const response = await axios.get(url, { responseType: 'arraybuffer' });
+  const workbook = xlsx.read(response.data, { type: 'buffer' });
+  const sheetName = workbook.SheetNames[0];
+  return xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+}
 
-      if (!farmersFile || !pilotsFile) {
-        return res.status(400).json({ message: "Both farmersFile and pilotsFile are required." });
-      }
+router.post("/upload", async (req, res) => {
+  try {
+    const { farmerFileUrl, pilotFileUrl, state } = req.body;
 
-      // Read Excel files from disk (not memory)
-      const farmers = await excelToJsonFarmer(farmersFile.path);
-      const pilots = await excelToJsonPilots(pilotsFile.path);
-
-      const totalFarmers = farmers.length;
-      const totalAcres = farmers.reduce((acc, f) => acc + parseFloat(f.acres || 0), 0);
-      const totalPilots = pilots.length;
-
-      const fileDoc = await File.create({
-        farmerFileName: farmersFile.originalname,
-        pilotFileName: pilotsFile.originalname,
-        filePaths: {
-          farmer: farmersFile.path,
-          pilot: pilotsFile.path,
-        },
-        totals: {
-          farmers: totalFarmers,
-          acres: totalAcres,
-          pilots: totalPilots,
-        }
-      });
-
-      res.status(200).json({
-        success: true,
-        id: fileDoc._id,
-        farmersData: farmers,
-        pilotsData: pilots,
-        totalFarmers,
-        totalAcres,
-        totalPilots,
-        message: "Files uploaded successfully",
-      });
-    } catch (err) {
-      console.error("Upload error:", err);
-      res.status(500).json({ message: err.message });
+    if (!farmerFileUrl || !pilotFileUrl) {
+      return res.status(400).json({ message: "Both farmerFileUrl and pilotFileUrl are required." });
     }
+
+    const farmers = await excelToJsonFarmer(farmerFileUrl);
+    const pilots = await excelToJsonPilots(pilotFileUrl);
+
+    const totalFarmers = farmers.length;
+    const totalAcres = farmers.reduce((acc, f) => acc + parseFloat(f.acres || 0), 0);
+    const totalPilots = pilots.length;
+
+    const fileDoc = await File.create({
+      farmerFileName: farmerFileUrl,
+      pilotFileName: pilotFileUrl,
+      filePaths: {
+        farmer: farmerFileUrl,
+        pilot: pilotFileUrl,
+      },
+      totals: {
+        farmers: totalFarmers,
+        acres: totalAcres,
+        pilots: totalPilots,
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      id: fileDoc._id,
+      farmersData: farmers,
+      pilotsData: pilots,
+      totalFarmers,
+      totalAcres,
+      totalPilots,
+      message: "Files uploaded & parsed successfully",
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ message: "Failed to process upload" });
   }
-);
+});
+
+router.post('/uploadMultiple', async (req, res) => {
+  try {
+    const { farmerUrls, pilotUrl, state } = req.body;
+
+    if (!farmerUrls || !pilotUrl) {
+      return res.status(400).json({ message: "farmerUrls and pilotUrl are required" });
+    }
+
+    let allFarmersData = [];
+    for (const url of farmerUrls) {
+      const chunkData = await downloadAndParseCsv(url);
+      allFarmersData = allFarmersData.concat(chunkData);
+    }
+
+    const pilotsData = await downloadAndParseCsv(pilotUrl);
+
+    const totalFarmers = allFarmersData.length;
+    const totalAcres = allFarmersData.reduce((acc, f) => acc + parseFloat(f.acres || 0), 0);
+    const totalPilots = pilotsData.length;
+
+    const fileDoc = await File.create({
+      farmerFileNames: farmerUrls, // ⬅️ array of URLs
+      pilotFileName: pilotUrl,     // ⬅️ single URL
+      filePaths: {
+        farmer: farmerUrls,        // ⬅️ array
+        pilot: pilotUrl,
+      },
+      totals: {
+        farmers: totalFarmers,
+        acres: totalAcres,
+        pilots: totalPilots,
+      },
+      state, // optionally save state if needed
+    });
+
+    await fileDoc.save();
+
+    return res.json({
+      success: true,
+      id: fileDoc._id,
+      farmersData: allFarmersData,
+      pilotsData,
+      totalFarmers,
+      totalAcres,
+      totalPilots,
+    });
+  } catch (error) {
+    console.error("Error in /uploadMultiple:", error);
+    res.status(500).json({ message: "Failed to process uploaded files" });
+  }
+});
 
 // Download route (optional: keep if you plan Excel export)
 router.get("/download/:id", async (req, res) => {

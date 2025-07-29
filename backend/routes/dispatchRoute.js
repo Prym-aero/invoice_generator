@@ -40,10 +40,22 @@ router.post("/generate", async (req, res) => {
         const fileDoc = await File.findById(fileId);
         if (!fileDoc) return res.status(404).json({ error: "File not found" });
 
-        // Parse Excel files from file paths on disk
+        // Parse Excel files from file paths/URLs
         let farmers, pilots;
         try {
-            farmers = await excelToJsonFarmer(fileDoc.filePaths.farmer); // fileDoc.filePaths.farmer should be file path string
+            // Handle multiple farmer URLs (array) or single farmer file
+            if (Array.isArray(fileDoc.filePaths.farmer)) {
+                // Multiple farmer files - combine all data
+                farmers = [];
+                for (const farmerUrl of fileDoc.filePaths.farmer) {
+                    const farmerData = await excelToJsonFarmer(farmerUrl);
+                    farmers = farmers.concat(farmerData);
+                }
+            } else {
+                // Single farmer file
+                farmers = await excelToJsonFarmer(fileDoc.filePaths.farmer);
+            }
+
             pilots = await excelToJsonPilots(fileDoc.filePaths.pilot);
         } catch (parseError) {
             console.error("Excel parsing failed:", parseError);

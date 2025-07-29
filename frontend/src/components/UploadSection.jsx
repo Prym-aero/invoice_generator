@@ -1,37 +1,94 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import StateSelector from "./StateSelector";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload";
 const API_URL = import.meta.env.VITE_API_ENDPOINT;
 
 const UPLOAD_STORAGE_KEY = "uploadData";
+
+// Utility function to safely clear localStorage if it's corrupted
+const clearCorruptedStorage = () => {
+  try {
+    localStorage.removeItem(UPLOAD_STORAGE_KEY);
+    console.log('Cleared corrupted localStorage data');
+  } catch (error) {
+    console.error('Failed to clear localStorage:', error);
+  }
+};
+
+// Utility function to check localStorage quota and clean up if needed
+const checkAndCleanStorage = () => {
+  try {
+    // Try to get current storage usage
+    const testKey = 'test_quota_check';
+    const testData = 'x'.repeat(1024 * 1024); // 1MB test data
+    localStorage.setItem(testKey, testData);
+    localStorage.removeItem(testKey);
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      console.warn('localStorage quota exceeded, clearing old data');
+      clearCorruptedStorage();
+    }
+  }
+};
 
 const UploadSection = ({ onSuccess }) => {
   const [farmerFile, setFarmerFile] = useState(null);
   const [pilotFile, setPilotFile] = useState(null);
   const [stateValue, setStateValue] = useState(() => {
-    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
-    return saved ? JSON.parse(saved).stateValue : null;
+    try {
+      const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+      return saved ? JSON.parse(saved).stateValue : null;
+    } catch (error) {
+      console.error('Failed to parse saved stateValue:', error);
+      return null;
+    }
   });
 
-  const [farmersData, setFarmersData] = useState(null);
+
 
   const [filteredData, setFilteredData] = useState(() => {
-    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
-    return saved ? JSON.parse(saved).filteredData : [];
+    try {
+      const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        // Check if we have the old format (full filteredData) or new format (summary)
+        return parsedData.filteredData || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to parse saved filteredData:', error);
+      return [];
+    }
   });
 
-  const [sets, setSets] = useState(() => {
-    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
-    return saved ? JSON.parse(saved).sets : {};
+  const [sets] = useState(() => {
+    try {
+      const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+      return saved ? JSON.parse(saved).sets || {} : {};
+    } catch (error) {
+      console.error('Failed to parse saved sets:', error);
+      return {};
+    }
   });
 
   const [total, setTotal] = useState(() => {
-    const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
-    return saved ? JSON.parse(saved).total : null;
+    try {
+      const saved = localStorage.getItem(UPLOAD_STORAGE_KEY);
+      return saved ? JSON.parse(saved).total : null;
+    } catch (error) {
+      console.error('Failed to parse saved total:', error);
+      return null;
+    }
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Check localStorage on component mount and clean up if needed
+  useEffect(() => {
+    checkAndCleanStorage();
+  }, []);
 
   const handleFarmerFileChange = (e) => {
     setFarmerFile(e.target.files[0]);
@@ -43,10 +100,41 @@ const UploadSection = ({ onSuccess }) => {
     setError("");
   };
 
+  const splitCsvBySize = async (file, maxChunkSize = 9 * 1024 * 1024) => {
+    const text = await file.text();
+    const rows = text.split(/\r?\n/);
+    const header = rows[0];
+    const dataRows = rows.slice(1);
+
+    const chunks = [];
+    let currentChunkRows = [];
+    let currentSize = 0;
+
+    for (const row of dataRows) {
+      const rowSize = new Blob([row + "\n"]).size; // include newline size
+      if (currentSize + rowSize > maxChunkSize) {
+        chunks.push(currentChunkRows);
+        currentChunkRows = [];
+        currentSize = 0;
+      }
+      currentChunkRows.push(row);
+      currentSize += rowSize;
+    }
+    if (currentChunkRows.length) chunks.push(currentChunkRows);
+
+    return chunks.map((chunkRows, idx) => {
+      const csvString = [header, ...chunkRows].join("\n");
+      return new File([csvString], `${file.name.split(".")[0]}_part${idx + 1}.csv`, {
+        type: "text/csv",
+      });
+    });
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!farmerFile && !pilotFile) {
-      setError("Please select a file");
+    if (!farmerFile || !pilotFile) {
+      setError("Please select farmer and pilot files");
       return;
     }
 
@@ -54,55 +142,66 @@ const UploadSection = ({ onSuccess }) => {
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("farmersFile", farmerFile);
-      formData.append("pilotsFile", pilotFile);
-      formData.append("state", stateValue);
+      // 1. Split farmer file into chunks under 9MB
+      const farmerChunks = await splitCsvBySize(farmerFile);
 
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value);
+      // 2. Upload each farmer chunk to Cloudinary, collect URLs
+      const farmerUrls = [];
+      for (const chunk of farmerChunks) {
+        const url = await uploadToCloudinary(chunk);
+        farmerUrls.push(url);
       }
 
-      const response = await axios.post(`${API_URL}/upload`, formData);
+      // 3. Upload pilot file to Cloudinary
+      const pilotUrl = await uploadToCloudinary(pilotFile);
 
-      const {
-        farmersData,
-        pilotsData,
-        sets,
-        totalFarmers,
-        totalAcres,
-        totalPilots,
-        id,
-      } = response.data;
+      // 4. Send all URLs + state to backend /uploadMultiple endpoint
+      const response = await axios.post(`${API_URL}/uploadMultiple`, {
+        farmerUrls,
+        pilotUrl,
+        state: stateValue,
+      });
+
+      const { farmersData, pilotsData, totalFarmers, totalAcres, totalPilots } = response.data;
 
       setFilteredData(farmersData);
-      setSets(sets || {});
+      setTotal({ farmers: totalFarmers, acres: totalAcres, pilots: totalPilots });
 
-      const totalInfo = {
-        farmers: totalFarmers,
-        acres: totalAcres,
-        pilots: totalPilots,
-      };
-      setTotal(totalInfo);
-
-      // Store in localStorage
-      localStorage.setItem(
-        UPLOAD_STORAGE_KEY,
-        JSON.stringify({
+      // Store data safely to localStorage
+      try {
+        const dataToStore = {
           stateValue,
-          filteredData,
-          sets,
-          total: totalInfo,
-        })
-      );
+          filteredDataSummary: {
+            length: farmersData.length,
+            totalAcres: farmersData.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0),
+            state: farmersData[0]?.state || null
+          },
+          total: { farmers: totalFarmers, acres: totalAcres, pilots: totalPilots },
+        };
 
-      onSuccess(id, totalInfo, farmersData, pilotsData, sets);
+        localStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify(dataToStore));
+      } catch (error) {
+        console.error('Failed to save upload data to localStorage:', error);
+        // Store minimal data if full storage fails
+        try {
+          localStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify({
+            stateValue,
+            total: { farmers: totalFarmers, acres: totalAcres, pilots: totalPilots },
+          }));
+        } catch (fallbackError) {
+          console.error('Even minimal localStorage save failed:', fallbackError);
+        }
+      }
+
+      onSuccess(response.data.id, { farmers: totalFarmers, acres: totalAcres, pilots: totalPilots }, farmersData, pilotsData);
     } catch (err) {
-      setError(err.response?.data?.message || "Upload failed");
+      setError(err.response?.data?.message || err.message || "Upload failed");
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   // Clear localStorage on refresh
   useEffect(() => {
@@ -117,10 +216,51 @@ const UploadSection = ({ onSuccess }) => {
 
   // Save to localStorage whenever stateValue changes
   useEffect(() => {
-    localStorage.setItem(
-      UPLOAD_STORAGE_KEY,
-      JSON.stringify({ stateValue, filteredData, sets, total })
-    );
+    try {
+      // Only store essential data to avoid quota exceeded error
+      const dataToStore = {
+        stateValue,
+        // Only store a summary of filteredData instead of the full dataset
+        filteredDataSummary: {
+          length: filteredData.length,
+          totalAcres: filteredData.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0),
+          state: filteredData[0]?.state || null
+        },
+        // Only store essential parts of sets if it's not too large
+        sets: Object.keys(sets).length > 0 ?
+          Object.fromEntries(
+            Object.entries(sets).slice(0, 10) // Limit to first 10 entries
+          ) : {},
+        total
+      };
+
+      const dataString = JSON.stringify(dataToStore);
+
+      // Check if the data size is reasonable (less than 4MB to be safe)
+      if (dataString.length < 4 * 1024 * 1024) {
+        localStorage.setItem(UPLOAD_STORAGE_KEY, dataString);
+      } else {
+        console.warn('Data too large for localStorage, skipping storage');
+        // Store only the most essential data
+        localStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify({
+          stateValue,
+          total
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+      // If localStorage fails, try to store minimal data
+      try {
+        localStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify({
+          stateValue,
+          total
+        }));
+      } catch (fallbackError) {
+        console.error('Even minimal localStorage save failed:', fallbackError);
+        // Clear localStorage if it's corrupted
+        localStorage.removeItem(UPLOAD_STORAGE_KEY);
+      }
+    }
   }, [stateValue, filteredData, sets, total]);
 
   return (

@@ -18,6 +18,8 @@ const App = () => {
     invoices: false,
   });
 
+
+
   const handleGenerate = useCallback((data) => {
     setProcessedData(data);
     setActiveTab("invoices");
@@ -52,6 +54,7 @@ const App = () => {
         <p className="text-gray-600">
           Generate Analytics with automated budget distribution
         </p>
+
       </header>
 
       <nav className="flex justify-center mb-8">
@@ -110,6 +113,20 @@ const App = () => {
               setsData={setsData}
               onGenerate={handleGenerate}
             />
+          )}
+          {activeTab === "budget" && !fileId && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">No File ID Available</h2>
+                <p className="text-gray-600">Please upload files first before proceeding to budget configuration.</p>
+                <button
+                  onClick={() => setActiveTab("upload")}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Go to Upload
+                </button>
+              </div>
+            </div>
           )}
           {activeTab === "invoices" && processedData && (
             <InvoiceSection invoices={processedData} fileId={fileId} />

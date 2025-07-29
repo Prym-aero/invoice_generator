@@ -78,7 +78,9 @@ const MAHARASHTRA_CROPS = [
   "Sunflower",
   "Fruits",
   "Vegetables",
-  "Tur",
+  "Toor",
+  "Gabbage",
+  "Guava",
 ];
 
 const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
@@ -153,6 +155,32 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
   const [filteredPilots, setFilteredPilots] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Early return if required data is not available
+  if (!farmersData || !pilotsData || !fileId) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">Loading Budget Configuration</h2>
+              <p className="text-gray-600">
+                {!fileId && "Missing file ID..."}
+                {!farmersData && "Loading farmers data..."}
+                {!pilotsData && "Loading pilots data..."}
+              </p>
+              <div className="mt-4 text-sm text-gray-500">
+                <p>File ID: {fileId || 'Not provided'}</p>
+                <p>Farmers Data: {farmersData ? `${farmersData.length} records` : 'Not loaded'}</p>
+                <p>Pilots Data: {pilotsData ? `${pilotsData.length} records` : 'Not loaded'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const normalize = (str) => {
@@ -391,9 +419,9 @@ const BudgetSection = ({ fileId, farmersData, pilotsData, onGenerate }) => {
                         value={
                           formData.selectedDistrict
                             ? {
-                                value: formData.selectedDistrict,
-                                label: formData.selectedDistrict,
-                              }
+                              value: formData.selectedDistrict,
+                              label: formData.selectedDistrict,
+                            }
                             : null
                         }
                         onChange={(opt) =>

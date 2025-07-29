@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 
 const FileSchema = new mongoose.Schema({
   // Metadata only — not raw data
-  farmerFileName: String,
+  farmerFileNames: [{ type: String, required: true }], // an array of strings
   pilotFileName: String,
   processedFileName: String, // Optional: if you're storing exported Excel
   filePaths: {
-    farmer: String, // e.g. path to uploaded file or GridFS reference
+    farmer: [String], // e.g. path to uploaded file or GridFS reference
     pilot: String,
     processedFile: {
       path: String,

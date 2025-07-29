@@ -1,6 +1,7 @@
 const xlsx = require('xlsx');
 const ExcelJS = require('exceljs');
-const fs = require('fs');
+const fs = require('fs').promises;
+const axios = require('axios');
 function parseSerialNumber(input) {
   if (!input) return { prefix: 'SR', number: 10000 }; // Default
 
@@ -35,57 +36,57 @@ function distributeAcres(numFarmers, totalAcres) {
   return distributed.map(a => Math.max(0.1, a)); // Minimum 0.1 acres per farmer
 }
 
-const excelToJsonFarmer = async (filePath) => {
-  const fileBuffer = await fs.readFileSync(filePath); // ⬅️ read buffer from disk
+
+const fetchFileBuffer = async (source) => {
+  if (Buffer.isBuffer(source)) return source;
+
+  // If source is a URL, download it
+  if (typeof source === "string" && source.startsWith("http")) {
+    const response = await axios.get(source, { responseType: "arraybuffer" });
+    return Buffer.from(response.data);
+  }
+
+  // Else assume it's a file path
+  return await fs.readFile(source);
+};
+
+const excelToJsonFarmer = async (source) => {
+  const fileBuffer = await fetchFileBuffer(source); // ⬅️ updated
   const workbook = xlsx.read(fileBuffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-  const properData = jsonData.map((farmer) => {
-    return {
-      name: farmer.farmer_name,
-      mobile: farmer.mobile_number,
-      acres: farmer.landholding_acres, // ← you missed `farmer.` here
-      state: farmer.state,
-      district: farmer.district,
-      taluka: farmer.taluka_or_city,
-      pincode: farmer.pincode || "431203"
-    };
-  });
-
-  console.log(properData.slice(0,5));
-
+  const properData = jsonData.map((farmer) => ({
+    name: farmer.farmer_name,
+    mobile: farmer.mobile_number,
+    acres: farmer.landholding_acres,
+    state: farmer.state,
+    district: farmer.district,
+    taluka: farmer.taluka_or_city,
+    pincode: farmer.pincode || "431203",
+  }));
 
   return properData;
-}
+};
 
-
-
-const excelToJsonPilots = async (filePath) => {
-  const fileBuffer = await fs.readFileSync(filePath); // ⬅️ read buffer from disk
-  const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+const excelToJsonPilots = async (source) => {
+  const fileBuffer = await fetchFileBuffer(source); // ⬅️ updated
+  const workbook = xlsx.read(fileBuffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
   const pilots = jsonData.map((data) => ({
-    name: data['Drone_Pilot_Name'],
-    district: data['District'].trim(),
+    name: data["Drone_Pilot_Name"],
+    district: data["District"]?.trim() || "",
     assignedTalukas:
       data["Taluka"]
-        .split("/")
-        .map(t => t.trim())
-        .filter(Boolean)
+        ?.split("/")
+        .map((t) => t.trim())
+        .filter(Boolean) || [],
   }));
 
-
-
-  console.log(pilots.slice(0,5));
-
-
-
-
   return pilots;
-}
+};
 
 async function generateExcelWithExcelJS(processedData) {
   const workbook = new ExcelJS.Workbook();

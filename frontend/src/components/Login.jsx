@@ -43,7 +43,7 @@ const Login = () => {
 
     try {
       const result = await login(formData.email, formData.password);
-      
+
       if (!result.success) {
         setError(result.message || 'Login failed');
       }
@@ -62,7 +62,7 @@ const Login = () => {
           <h1 className="text-3xl font-bold text-blue-600 mb-2">Farmer Analytics</h1>
           <p className="text-gray-600 text-sm">Invoice Generation System</p>
         </div>
-        
+
         <h2 className="mt-8 text-center text-2xl font-bold text-gray-900">
           Sign in to your account
         </h2>
@@ -167,17 +167,6 @@ const Login = () => {
               </button>
             </div>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">Demo Credentials:</h4>
-              <p className="text-xs text-blue-700">
-                <strong>Email:</strong> accountsalamkisan@gmail.com<br />
-                <strong>Password:</strong> account@123
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

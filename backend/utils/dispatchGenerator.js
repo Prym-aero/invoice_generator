@@ -157,6 +157,7 @@ async function generateDispatchData({
     assignPilots(selectedFarmers, pilots);
     assignDates(selectedFarmers, dateRange);
     assignSerialNumbers(selectedFarmers, startSerial);
+    assignInvoiceNumbers(selectedFarmers);
 
     return selectedFarmers;
 }
@@ -198,6 +199,18 @@ function assignSerialNumbers(farmers, startSerial) {
 
     farmers.forEach((f) => {
         f.serialNumber = `${prefix}${number++}`;
+    });
+}
+
+// Global counter for unique invoice numbers
+let invoiceCounter = 1;
+
+function assignInvoiceNumbers(farmers) {
+    farmers.forEach((f) => {
+        const randomNum = Math.floor(Math.random() * 90000) + 10000; // 5 digit number
+        const serialNum = invoiceCounter.toString().padStart(2, '0'); // 2 digit serial
+        f.invoiceNo = `INV-${randomNum}-${serialNum}`;
+        invoiceCounter++;
     });
 }
 

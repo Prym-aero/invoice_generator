@@ -1,5 +1,19 @@
 const { distributeAcres } = require('./helpFunctions');
 
+// Global counter for unique invoice numbers
+let invoiceCounter = 1;
+
+// Function to generate unique invoice numbers in INV-XXXXX-XX format
+const generateUniqueInvoiceNumber = () => {
+    const randomNum = Math.floor(Math.random() * 90000) + 10000; // 5 digit number
+    const serialNum = invoiceCounter.toString().padStart(2, '0'); // 2 digit serial
+
+    invoiceCounter++;
+
+    // Format: INV-XXXXX-XX (e.g., INV-24524-01)
+    return `INV-${randomNum}-${serialNum}`;
+};
+
 const getProcessedData = (farmersByRegion, regions, recipientsCount, distributedAcres, acresDivision, prefix, currentNumber, discountAmount) => {
     const processedData = [];
     let totalDiscountedFarmers = 0;
@@ -46,7 +60,7 @@ const getProcessedData = (farmersByRegion, regions, recipientsCount, distributed
                 originalAmount,
                 discount: isDiscounted ? `₹${discountAmount}` : 'No',
                 finalAmount,
-                invoiceNo: `INV-${Date.now().toString().padStart(4, '0').slice(-4)}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`
+                invoiceNo: generateUniqueInvoiceNumber()
             });
         });
     });

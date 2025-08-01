@@ -1,6 +1,61 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 const API_URL = import.meta.env.VITE_API_ENDPOINT;
+
+// Function to convert number to words (Indian format)
+const numberToWords = (num) => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  if (num === 0) return 'Zero';
+
+  const convertHundreds = (n) => {
+    let result = '';
+    if (n >= 100) {
+      result += ones[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 20) {
+      result += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    } else if (n >= 10) {
+      result += teens[n - 10] + ' ';
+      return result;
+    }
+    if (n > 0) {
+      result += ones[n] + ' ';
+    }
+    return result;
+  };
+
+  let result = '';
+  const crores = Math.floor(num / 10000000);
+  if (crores > 0) {
+    result += convertHundreds(crores) + 'Crore ';
+    num %= 10000000;
+  }
+
+  const lakhs = Math.floor(num / 100000);
+  if (lakhs > 0) {
+    result += convertHundreds(lakhs) + 'Lakh ';
+    num %= 100000;
+  }
+
+  const thousands = Math.floor(num / 1000);
+  if (thousands > 0) {
+    result += convertHundreds(thousands) + 'Thousand ';
+    num %= 1000;
+  }
+
+  if (num > 0) {
+    result += convertHundreds(num);
+  }
+
+  return result.trim();
+};
 
 const InvoiceSection = ({ invoices = [], fileId = "" }) => {
   const [selectedRegion, setSelectedRegion] = useState("all");
@@ -33,270 +88,252 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
     }
   };
 
+  // Fixed PDF generation with proper positioning and no overlaps
+  const generatePDF = (farmers) => {
+    console.log('PDF Generation - Farmers data:', farmers);
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    farmers.forEach((farmer, index) => {
+      console.log(`Processing farmer ${index}:`, farmer);
+      if (index > 0) {
+        pdf.addPage(); // New page for each invoice
+      }
+
+      const total = farmer.acres * farmer.ratePerAcre;
+      const discountValue = farmer.discount && farmer.discount !== "No" && typeof farmer.discount === 'string'
+        ? parseFloat(farmer.discount.replace("₹", ""))
+        : 0;
+      const finalAmount = farmer.totalCost;
+      // Use existing invoice number or generate new one in INV-XXXXX-XX format
+      const invoiceNumber = farmer.invoiceNo || farmer.invoiceNumber || (() => {
+        const randomNum = Math.floor(Math.random() * 90000) + 10000; // 5 digit number
+        const serialNum = String(index + 1).padStart(2, '0'); // 2 digit serial
+        return `INV-${randomNum}-${serialNum}`;
+      })();
+
+      // Main border
+      pdf.setLineWidth(0.5);
+      pdf.rect(15, 15, 180, 250);
+
+      // Header - INVOICE (centered)
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INVOICE', pageWidth / 2, 30, { align: 'center' });
+
+      // Company details (left side)
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PRYM SOLUTIONS PRIVATE LIMITED', 20, 45);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('104, MITTAL TOWER, C WING,', 20, 52);
+      pdf.text('NARIMAN POINT,', 20, 59);
+      pdf.text('MUMBAI', 20, 66);
+      pdf.text('GSTIN/UIN: 27AAMCP5981E1ZZ', 20, 73);
+      pdf.text('State Name : Maharashtra, Code : 27', 20, 80);
+      pdf.text('E-Mail : info@salamkisan.com', 20, 87);
+
+      // Invoice details table (right side) - Fixed positioning
+      const tableX = 125;
+      const tableY = 40;
+      const cellW1 = 35;
+      const cellW2 = 35;
+      const cellH = 10;
+
+      // Draw invoice details table with proper structure
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+
+      // Row 1: Headers
+      pdf.rect(tableX, tableY, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY, cellW2, cellH);
+      pdf.text('Invoice No.', tableX + 2, tableY + 7);
+      pdf.text('Dated', tableX + cellW1 + 2, tableY + 7);
+
+      // Row 2: Values
+      pdf.rect(tableX, tableY + cellH, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH, cellW2, cellH);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(invoiceNumber, tableX + 2, tableY + cellH + 7);
+      pdf.text(new Date().toLocaleDateString('en-GB'), tableX + cellW1 + 2, tableY + cellH + 7);
+
+      // Row 3: Headers
+      pdf.rect(tableX, tableY + cellH * 2, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 2, cellW2, cellH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Delivery Note', tableX + 2, tableY + cellH * 2 + 7);
+      pdf.text('Mode/Terms of Payment', tableX + cellW1 + 2, tableY + cellH * 2 + 7);
+
+      // Row 4: Empty values
+      pdf.rect(tableX, tableY + cellH * 3, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 3, cellW2, cellH);
+
+      // Row 5: Headers
+      pdf.rect(tableX, tableY + cellH * 4, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 4, cellW2, cellH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Reference No. & Date.', tableX + 2, tableY + cellH * 4 + 7);
+      pdf.text('Other References', tableX + cellW1 + 2, tableY + cellH * 4 + 7);
+
+      // Row 6: Empty values
+      pdf.rect(tableX, tableY + cellH * 5, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 5, cellW2, cellH);
+
+      // Row 7: Headers
+      pdf.rect(tableX, tableY + cellH * 6, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 6, cellW2, cellH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Dispatch Doc No.', tableX + 2, tableY + cellH * 6 + 7);
+      pdf.text('Delivery Note Date', tableX + cellW1 + 2, tableY + cellH * 6 + 7);
+
+      // Row 8: Empty values
+      pdf.rect(tableX, tableY + cellH * 7, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 7, cellW2, cellH);
+
+      // Row 9: Headers
+      pdf.rect(tableX, tableY + cellH * 8, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 8, cellW2, cellH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Dispatched through', tableX + 2, tableY + cellH * 8 + 7);
+      pdf.text('Destination', tableX + cellW1 + 2, tableY + cellH * 8 + 7);
+
+      // Row 10: Empty values
+      pdf.rect(tableX, tableY + cellH * 9, cellW1, cellH);
+      pdf.rect(tableX + cellW1, tableY + cellH * 9, cellW2, cellH);
+
+      // Row 11: Terms of Delivery (spans both columns)
+      pdf.rect(tableX, tableY + cellH * 10, cellW1 + cellW2, cellH);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Terms of Delivery', tableX + 2, tableY + cellH * 10 + 7);
+
+      // Buyer details
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text('Buyer (Bill to)', 20, 155);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(farmer.farmerName || farmer.name || 'Govind Kamalkishor Hambarde', 20, 163);
+      pdf.text('Ner Dhule', 20, 170);
+      pdf.text('State Name : Maharashtra, Code : 27', 20, 177);
+
+      // Main service table - Fixed positioning and sizing
+      const mainTableY = 185;
+      const mainTableW = 170;
+      const mainTableH = 60;
+
+      // Column definitions with proper widths
+      const colWidths = [15, 65, 20, 20, 15, 12, 23]; // Total = 170
+      const colLabels = ['Sl\nNo', 'Description of Goods', 'HSN/SAC', 'Quantity', 'Rate', 'per', 'Amount'];
+
+      // Draw main table border
+      pdf.rect(20, mainTableY, mainTableW, mainTableH);
+
+      // Header row
+      let currentX = 20;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+
+      colWidths.forEach((width, i) => {
+        pdf.rect(currentX, mainTableY, width, 12);
+        const lines = colLabels[i].split('\n');
+        lines.forEach((line, lineIndex) => {
+          pdf.text(line, currentX + 2, mainTableY + 6 + (lineIndex * 3));
+        });
+        currentX += width;
+      });
+
+      // Content row
+      const contentY = mainTableY + 12;
+      const contentH = 35;
+      currentX = 20;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+
+      colWidths.forEach((width, i) => {
+        pdf.rect(currentX, contentY, width, contentH);
+
+        // Add content based on column
+        if (i === 0) pdf.text('1', currentX + 6, contentY + 8);
+        if (i === 1) pdf.text('Agri Drone Spray Service', currentX + 2, contentY + 8);
+        if (i === 3) pdf.text(`${farmer.acres.toFixed(2)} Acre`, currentX + 2, contentY + 8);
+        if (i === 4) pdf.text(`${farmer.ratePerAcre || 500}.00`, currentX + 2, contentY + 8);
+        if (i === 5) pdf.text('Acre', currentX + 2, contentY + 8);
+        if (i === 6) {
+          pdf.setFontSize(7);
+          pdf.text(`${finalAmount.toFixed(2)}`, currentX + 1, contentY + 8);
+          pdf.setFontSize(8);
+        }
+
+        currentX += width;
+      });
+
+      // Total row
+      const totalY = contentY + contentH;
+      currentX = 20;
+
+      pdf.setFont('helvetica', 'bold');
+      colWidths.forEach((width, i) => {
+        pdf.rect(currentX, totalY, width, 13);
+
+        if (i === 2) pdf.text('Total', currentX + 2, totalY + 8);
+        if (i === 3) pdf.text(`${farmer.acres.toFixed(2)} Acre`, currentX + 2, totalY + 8);
+        if (i === 6) {
+          pdf.setFontSize(10);
+          pdf.text(`${finalAmount.toFixed(2)}`, currentX + 1, totalY + 8);
+          pdf.setFontSize(8);
+        }
+
+        currentX += width;
+      });
+
+      // Amount in words section
+      const wordsY = mainTableY + mainTableH + 10;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text('Amount Chargeable (in words)', 20, wordsY);
+      pdf.text('E. & O.E', 160, wordsY);
+
+      pdf.setFont('helvetica', 'normal');
+      const amountInWords = `INR ${numberToWords(Math.floor(finalAmount))} Only`;
+      pdf.text(amountInWords, 20, wordsY + 8);
+
+      // Declaration section
+      const declY = wordsY + 20;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Declaration', 20, declY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('We declare that this invoice shows the actual price of', 20, declY + 8);
+      pdf.text('the goods described and that all particulars are true', 20, declY + 16);
+      pdf.text('and correct.', 20, declY + 24);
+
+      // Company signature (right side)
+      pdf.text('for PRYM SOLUTIONS PRIVATE LIMITED', 110, declY + 8);
+      pdf.text('Authorised Signatory', 125, declY + 24);
+
+      // Footer
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text('This is a Computer Generated Invoice', pageWidth / 2, declY + 35, { align: 'center' });
+    });
+
+    return pdf;
+  };
+
   const handlePrint = async (farmers) => {
     setIsPrinting(true);
 
     try {
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) throw new Error("Popup blocked. Please allow popups.");
-
-      const content = farmers
-        .map((farmer) => {
-          const total = farmer.acres * farmer.ratePerAcre;
-          const finalAmount =
-            farmer.discount !== "No"
-              ? total - parseFloat(farmer.discount.replace("₹", ""))
-              : total;
-
-          return `
-        <div class="invoice">
-          <h2 style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px;">
-            INVOICE
-          </h2>
-
-          <div style="margin-bottom: 20px;">
-            <p><strong>Invoice No:</strong> ${farmer.invoiceNo}</p>
-            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-          </div>
-
-          <div style="margin-bottom: 20px;">
-            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">Farmer Details:</h3>
-            <p><strong>Name:</strong> ${farmer.name}</p>
-            <p><strong>District:</strong> ${farmer.district}</p>
-            <p><strong>Region:</strong> ${farmer.region}</p>
-          </div>
-
-          <div style="margin-bottom: 20px;">
-            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">Payment Details:</h3>
-            <p><strong>Acres:</strong> ${farmer.acres}</p>
-            <p><strong>Price per Acre:</strong> ₹${farmer.ratePerAcre}</p>
-            <p><strong>Total:</strong> ₹${total.toFixed(2)}</p>
-            ${
-              farmer.discount !== "No"
-                ? `<p><strong>Discount:</strong> ₹${farmer.discount.replace(
-                    "₹",
-                    ""
-                  )}</p>`
-                : ""
-            }
-            <p style="font-weight: bold;"><strong>Final Amount:</strong> ₹${finalAmount.toFixed(
-              2
-            )}</p>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px; font-style: italic;">
-            <p>Thank you for your cooperation!</p>
-          </div>
-        </div>
-      `;
-        })
-        .join("");
-
-      printWindow.document.write(`
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Farmer Invoice</title>
-      <style>
-        @media print {
-          @page {
-            margin: 0.5in;
-          }
-          body {
-            margin: 0;
-          }
-        }
-
-        body {
-          font-family: 'Helvetica Neue', 'Segoe UI', sans-serif;
-          color: #333;
-          background: #fff;
-          padding: 40px;
-        }
-
-        .invoice {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 40px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          page-break-after: always;
-        }
-
-        .invoice-title {
-          text-align: center;
-          font-size: 32px;
-          font-weight: 500;
-          color: #2f2f91;
-          letter-spacing: 1px;
-          margin-bottom: 40px;
-        }
-
-        .top-section, .bottom-section {
-          display: flex;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .top-section div, .bottom-section div {
-          margin-bottom: 10px;
-        }
-
-        .info-label {
-          font-weight: bold;
-          color: #333;
-        }
-
-        .invoice-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 30px;
-          font-size: 14px;
-        }
-
-        .invoice-table th {
-          background: #dbe5f1;
-          color: #2f2f91;
-          text-align: left;
-          padding: 10px;
-          border: 1px solid #ccc;
-        }
-
-        .invoice-table td {
-          padding: 10px;
-          border: 1px solid #ccc;
-        }
-
-        .totals {
-          float: right;
-          margin-top: 30px;
-          font-size: 16px;
-        }
-
-        .totals div {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 6px;
-        }
-
-        .footer {
-          text-align: center;
-          margin-top: 80px;
-          font-size: 13px;
-          color: #777;
-        }
-
-      </style>
-    </head>
-    <body>
-      ${farmers
-        .map((farmer) => {
-          const total = farmer.acres * farmer.ratePerAcre;
-          const discountValue =
-            farmer.discount !== "No"
-              ? parseFloat(farmer.discount.replace("₹", ""))
-              : 0;
-          const finalAmount = total - discountValue;
-
-          return `
-          <div class="invoice">
-            <div class="invoice-title">INVOICE</div>
-
-            <div class="top-section">
-              <div>
-                <div><span class="info-label">DATE:</span> ${new Date().toLocaleDateString()}</div>
-                <div><span class="info-label">INVOICE #:</span> ${
-                  farmer.invoiceNo
-                }</div>
-                <div><span class="info-label">CUSTOMER ID:</span> ${
-                  farmer.serialNo
-                }</div>
-              </div>
-              <div>
-                <div><span class="info-label">TO:</span><br>
-                  ${farmer.farmerName}<br>
-                  ${farmer.address}<br>
-                  ${farmer.city}, ${farmer.district}, ${farmer.state}<br>
-                  ${farmer.farmerMobile}
-                </div>
-              </div>
-            </div>
-
-            <div class="bottom-section">
-              <div><span class="info-label">SALESPERSON:</span> Agri Officer</div>
-              <div><span class="info-label">JOB:</span> Land Survey</div>
-              <div><span class="info-label">PAYMENT TERMS:</span> Due on receipt</div>
-              <div><span class="info-label">DUE DATE:</span> ${new Date().toLocaleDateString()}</div>
-            </div>
-
-            <table class="invoice-table">
-              <thead>
-                <tr>
-                  <th>QTY</th>
-                  <th>DESCRIPTION</th>
-                  <th>UNIT PRICE</th>
-                  <th>LINE TOTAL</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>${farmer.acres}</td>
-                  <td>Land Service - ${farmer.region} Region</td>
-                  <td>₹${farmer.ratePerAcre}</td>
-                  <td>₹${total.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="totals">
-              <div><span>Subtotal:</span><span>₹${total.toFixed(2)}</span></div>
-              ${
-                discountValue > 0
-                  ? `<div><span>Discount:</span><span>-₹${discountValue.toFixed(
-                      2
-                    )}</span></div>`
-                  : ""
-              }
-              <div><strong>Total:</strong><strong>₹${finalAmount.toFixed(
-                2
-              )}</strong></div>
-            </div>
-
-            <div class="footer">
-               
-            </div>
-          </div>
-        `;
-        })
-        .join("")}
-      
-      <script>
-        setTimeout(() => {
-          try {
-            window.print();
-          } catch (e) {
-            console.warn('Print failed:', e);
-          } finally {
-            setTimeout(() => {
-              window.close();
-            }, 300);
-          }
-        }, 500);
-      </script>
-    </body>
-  </html>
-`);
-
-      printWindow.document.close();
+      const pdf = generatePDF(farmers);
+      pdf.save(`invoices_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
-      console.error("Printing error:", error);
-      alert("Printing failed: " + error.message);
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
     } finally {
       setIsPrinting(false);
     }
   };
+
+  // Removed old print function - using PDF generation instead
 
   // Add beforeunload event listener to clear localStorage on refresh
   useEffect(() => {
@@ -358,13 +395,25 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
             Download Excel
           </button>
 
-          {/* <button
-            onClick={() => handlePrint(safeInvoices)}
+          <button
+            onClick={() => handlePrint(filteredInvoices)}
             disabled={isPrinting || filteredInvoices.length === 0}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {isPrinting ? "Preparing..." : "Print Invoices"}
-          </button> */}
+            <svg
+              className="-ml-1 mr-2 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {isPrinting ? "Generating PDF..." : "Print All Invoices"}
+          </button>
         </div>
       </div>
 
@@ -374,6 +423,9 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Serial No.
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Invoice No.
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
@@ -414,6 +466,9 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Total Cost
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -424,7 +479,16 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                     {invoice.serialNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {invoice.name}
+                    <span className="font-mono text-blue-600">
+                      {invoice.invoiceNo || invoice.invoiceNumber || (() => {
+                        const randomNum = Math.floor(Math.random() * 90000) + 10000;
+                        const serialNum = String(index + 1).padStart(2, '0');
+                        return `INV-${randomNum}-${serialNum}`;
+                      })()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.farmerName || invoice.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.mobile}
@@ -462,12 +526,33 @@ const InvoiceSection = ({ invoices = [], fileId = "" }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {invoice.totalCost.toFixed(2)}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <button
+                      onClick={() => handlePrint([invoice])}
+                      disabled={isPrinting}
+                      className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    >
+                      <svg
+                        className="w-3 h-3 mr-1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Print
+                    </button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan="9"
+                  colSpan="12"
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
                   {safeInvoices.length === 0

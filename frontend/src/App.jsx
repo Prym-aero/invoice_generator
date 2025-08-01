@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Header from "./components/Header";
 import UploadSection from "./components/UploadSection";
 import BudgetSection from "./components/BudgetSection";
 import InvoiceSection from "./components/InvoiceSection";
 import SingleInvoicePrint from "./components/SingleInvoicePrint";
 
-const App = () => {
+const MainApp = () => {
   const [activeTab, setActiveTab] = useState("upload");
   const [fileId, setFileId] = useState(null);
   const [processedData, setProcessedData] = useState(null);
@@ -49,13 +52,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-blue-600">Farmer Analytics</h1>
-        <p className="text-gray-600">
-          Generate Analytics with automated budget distribution
-        </p>
-
-      </header>
+      <Header />
 
       <nav className="flex justify-center mb-8">
         <div className="flex space-x-1 bg-white p-1 rounded-lg shadow">
@@ -153,5 +150,16 @@ const TabButton = ({ children, active, onClick, disabled }) => (
     {children}
   </button>
 );
+
+// Main App component with authentication wrapper
+const App = () => {
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <MainApp />
+      </ProtectedRoute>
+    </AuthProvider>
+  );
+};
 
 export default App;

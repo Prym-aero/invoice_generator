@@ -17,6 +17,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 const FileRoute = require('./routes/Files');
 const invoiceRoute = require('./routes/invoiceRoute');
 const dispatchRoute = require('./routes/dispatchRoute');
+const authRoute = require('./routes/auth');
 
 app.get('/', (req, res) => {
     res.send("invoice generator backend");
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 app.use('/api', FileRoute);
 app.use('/api', invoiceRoute);
 app.use('/api', dispatchRoute);
+app.use('/api/auth', authRoute);
 
 
 app.listen(process.env.PORT, () => {
